@@ -1,6 +1,12 @@
+# Moogie - Synthetics Runner
+# Combined .gitignore for Go API and Node.js/Svelte UI
+
+# =============================================================================
+# Go (API)
+# =============================================================================
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -24,9 +30,71 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
-.env
+# =============================================================================
+# Node.js/Svelte (UI)
+# =============================================================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
+# Build outputs
+dist/
+build/
+.svelte-kit/
+
+# Vite
+.vite/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Package manager lock files (uncomment the one you're NOT using)
+# package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# =============================================================================
 # Editor/IDE
-# .idea/
-# .vscode/
+# =============================================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# OS
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# =============================================================================
+# Docker
+# =============================================================================
+# Docker build context
+.dockerignore
+
+# =============================================================================
+# Logs
+# =============================================================================
+logs/
+*.log

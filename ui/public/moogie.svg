@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 64" aria-hidden="true" role="img">
+  <defs>
+    <!-- Gradients for 3D effect -->
+    <linearGradient id="whiteKeyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="80%" stop-color="#f0f0f0"/>
+      <stop offset="100%" stop-color="#d0d0d0"/>
+    </linearGradient>
+    <linearGradient id="blackKeyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#333333"/>
+      <stop offset="80%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Left white key (extends under black key) -->
+  <rect x="0" y="0" width="23" height="64" rx="1" fill="url(#whiteKeyGrad)" stroke="#bbb" stroke-width="0.3"/>
+  <rect x="1" y="1" width="21" height="2" rx="0.5" fill="rgba(255,255,255,0.8)"/>
+  
+  <!-- Right white key (extends under black key) -->
+  <rect x="25" y="0" width="23" height="64" rx="1" fill="url(#whiteKeyGrad)" stroke="#bbb" stroke-width="0.3"/>
+  <rect x="26" y="1" width="21" height="2" rx="0.5" fill="rgba(255,255,255,0.8)"/>
+  
+  <!-- Middle black key (shorter, on top of white keys) -->
+  <rect x="16" y="0" width="16" height="40" rx="1" fill="url(#blackKeyGrad)" stroke="#555" stroke-width="0.3"/>
+  <rect x="17" y="1" width="14" height="2" rx="0.5" fill="rgba(255,255,255,0.1)"/>
+  <rect x="33" y="1" width="14" height="2" rx="0.5" fill="rgba(255,255,255,0.8)"/>
+  
+  <!-- Key labels/indicators -->
+  <circle cx="11.5" cy="50" r="1.5" fill="rgba(0,0,0,0.1)"/>
+  <circle cx="36.5" cy="50" r="1.5" fill="rgba(0,0,0,0.1)"/>
+  <circle cx="24" cy="30" r="1.5" fill="rgba(255,255,255,0.2)"/>
+</svg>
