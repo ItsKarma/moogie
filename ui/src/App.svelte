@@ -1,15 +1,14 @@
 <script>
-  import Router, { link, push, location } from 'svelte-spa-router';
+  import Router, { link, location } from 'svelte-spa-router';
   import Dashboard from './pages/Dashboard.svelte';
-  import JobConfig from './pages/JobConfig.svelte';
-  import Logs from './pages/Logs.svelte';
+  import Jobs from './pages/Jobs.svelte';
 
   // Define routes
   const routes = {
     '/': Dashboard,
     '/dashboard': Dashboard,
-    '/create': JobConfig,
-    '/logs': Logs,
+    '/jobs': Jobs,
+    '/job/:jobId': Jobs,
   };
 
   // Use the reactive location store from svelte-spa-router
@@ -35,20 +34,11 @@
         </li>
         <li>
           <a 
-            href="/create" 
+            href="/jobs" 
             use:link 
-            class:active={currentPath === '/create'}
+            class:active={currentPath === '/jobs' || currentPath.startsWith('/job/')}
           >
-            Create Job
-          </a>
-        </li>
-        <li>
-          <a 
-            href="/logs" 
-            use:link 
-            class:active={currentPath === '/logs'}
-          >
-            Logs
+            Jobs
           </a>
         </li>
       </ul>
@@ -89,13 +79,6 @@
     margin: 0;
     font-size: 1.8rem;
     font-weight: bold;
-  }
-
-  .tagline {
-    font-size: 0.8rem;
-    opacity: 0.9;
-    display: block;
-    margin-top: 0.2rem;
   }
 
   .nav-links {

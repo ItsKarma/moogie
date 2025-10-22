@@ -1,26 +1,15 @@
 <script>
-  // Mock job data - will be replaced with API calls later
-  let jobs = [
-    { id: 1, name: "Website Health Check", status: "running", lastRun: "2 minutes ago", nextRun: "in 28 minutes" },
-    { id: 2, name: "API Response Time", status: "success", lastRun: "15 minutes ago", nextRun: "in 15 minutes" },
-    { id: 3, name: "Database Connection", status: "failed", lastRun: "1 hour ago", nextRun: "in 2 hours" },
-    { id: 4, name: "SSL Certificate Check", status: "warning", lastRun: "3 hours ago", nextRun: "in 21 hours" },
-  ];
+  import { getSuccessRateColor, calculateOverallSuccessRate } from '../lib/utils.js';
+  import { mockDashboardJobs } from '../lib/mockData.js';
+  import StatusBadge from '../components/StatusBadge.svelte';
 
-  function getStatusColor(status) {
-    switch(status) {
-      case 'running': return '#2196F3';
-      case 'success': return '#4CAF50';
-      case 'failed': return '#F44336';
-      case 'warning': return '#FF9800';
-      default: return '#9E9E9E';
-    }
-  }
+  // Use imported mock data
+  let jobs = mockDashboardJobs;
+
+  $: overallSuccessRate = calculateOverallSuccessRate(jobs);
 </script>
 
 <div class="dashboard">
-  <h1>Job Dashboard</h1>
-  
   <div class="stats-grid">
     <div class="stat-card">
       <h3>Active Jobs</h3>
@@ -36,7 +25,7 @@
     </div>
     <div class="stat-card">
       <h3>Success Rate</h3>
-      <div class="stat-number">75%</div>
+      <div class="stat-number" style="color: {getSuccessRateColor(overallSuccessRate)}">{overallSuccessRate}%</div>
     </div>
   </div>
 
@@ -47,9 +36,7 @@
         <div class="job-card">
           <div class="job-header">
             <h3>{job.name}</h3>
-            <span class="status-badge" style="background-color: {getStatusColor(job.status)}">
-              {job.status.toUpperCase()}
-            </span>
+            <StatusBadge status={job.status} size="small" />
           </div>
           <div class="job-details">
             <p><strong>Last Run:</strong> {job.lastRun}</p>
@@ -66,12 +53,6 @@
     padding: 2rem;
     max-width: 1200px;
     margin: 0 auto;
-  }
-
-  h1 {
-    color: #333;
-    text-align: center;
-    margin-bottom: 2rem;
   }
 
   .stats-grid {
@@ -91,9 +72,10 @@
 
   .stat-card h3 {
     margin: 0 0 0.5rem 0;
-    color: #666;
+    color: #333;
     font-size: 0.9rem;
     text-transform: uppercase;
+    font-weight: 600;
   }
 
   .stat-number {
@@ -141,14 +123,6 @@
     font-size: 1.1rem;
   }
 
-  .status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    color: white;
-    font-size: 0.8rem;
-    font-weight: bold;
-  }
-
   .job-details p {
     margin: 0.5rem 0;
     color: #666;
@@ -160,7 +134,7 @@
       color: #ffffff;
     }
     
-    h1, .jobs-section h2, .job-header h3 {
+    .jobs-section h2, .job-header h3 {
       color: #ffffff;
     }
     
@@ -169,8 +143,17 @@
       color: #ffffff;
     }
     
-    .stat-card h3, .job-details p {
-      color: #cccccc;
+    .stat-card h3 {
+      color: #ffffff;
+      font-weight: 700;
+    }
+    
+    .stat-number {
+      color: #ffffff;
+    }
+    
+    .job-details p {
+      color: #e0e0e0;
     }
   }
 </style>

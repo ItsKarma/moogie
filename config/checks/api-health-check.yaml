@@ -1,0 +1,21 @@
+apiVersion: moogie.io/v1
+kind: HttpCheck
+metadata:
+  name: api-health-check
+  labels:
+    environment: production
+    service: api
+    team: backend
+spec:
+  url: https://api.example.com/health
+  method: GET
+  timeout: 30s
+  expectedStatusCode: 200
+  schedule: "*/5 * * * *" # Every 5 minutes
+  retries: 3
+  headers:
+    User-Agent: "Moogie/1.0"
+    Accept: "application/json"
+  alerts:
+    onFailure: true
+    email: alerts@example.com

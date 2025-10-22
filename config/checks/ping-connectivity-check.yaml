@@ -1,0 +1,21 @@
+apiVersion: moogie.io/v1
+kind: PingCheck
+metadata:
+  name: server-connectivity-check
+  labels:
+    environment: production
+    service: server
+    team: infrastructure
+spec:
+  host: server.example.com
+  count: 4
+  timeout: 5s
+  interval: 1s # Time between pings
+  schedule: "*/1 * * * *" # Every minute
+  retries: 2
+  packetLossThreshold: 25 # Alert if packet loss > 25%
+  alerts:
+    onFailure: true
+    onHighLatency: true
+    latencyThreshold: 100ms
+    email: monitoring@example.com

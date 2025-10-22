@@ -1,0 +1,17 @@
+apiVersion: moogie.io/v1
+kind: TcpCheck
+metadata:
+  name: database-connection-check
+  labels:
+    environment: production
+    service: database
+    team: infrastructure
+spec:
+  host: db.example.com
+  port: 5432
+  timeout: 10s
+  schedule: "*/2 * * * *" # Every 2 minutes
+  retries: 2
+  alerts:
+    onFailure: true
+    email: dba@example.com
