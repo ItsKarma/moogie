@@ -1,7 +1,10 @@
 <script>
+  import { onMount } from 'svelte';
   import Router, { link, location } from 'svelte-spa-router';
   import Dashboard from './pages/Dashboard.svelte';
   import Jobs from './pages/Jobs.svelte';
+  import DateRangePicker from './components/DateRangePicker.svelte';
+  import { dateRange } from './lib/stores.js';
 
   // Define routes
   const routes = {
@@ -13,6 +16,11 @@
 
   // Use the reactive location store from svelte-spa-router
   $: currentPath = $location;
+
+  // Initialize date range from URL parameters when app starts
+  onMount(() => {
+    dateRange.initFromURL();
+  });
 </script>
 
 <div class="app">
@@ -22,26 +30,32 @@
         <h1>Moogie</h1>
       </div>
       
-      <ul class="nav-links">
-        <li>
-          <a 
-            href="/" 
-            use:link 
-            class:active={currentPath === '/' || currentPath === '/dashboard'}
-          >
-            Dashboard
-          </a>
-        </li>
-        <li>
-          <a 
-            href="/jobs" 
-            use:link 
-            class:active={currentPath === '/jobs' || currentPath.startsWith('/job/')}
-          >
-            Jobs
-          </a>
-        </li>
-      </ul>
+      <div class="nav-right">
+        <ul class="nav-links">
+          <li>
+            <a 
+              href="/" 
+              use:link 
+              class:active={currentPath === '/' || currentPath === '/dashboard'}
+            >
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a 
+              href="/jobs" 
+              use:link 
+              class:active={currentPath === '/jobs' || currentPath.startsWith('/job/')}
+            >
+              Jobs
+            </a>
+          </li>
+        </ul>
+        
+        <div class="nav-actions">
+          <DateRangePicker />
+        </div>
+      </div>
     </div>
   </nav>
 
@@ -69,16 +83,22 @@
   .nav-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 1rem;
   }
 
   .nav-brand h1 {
     margin: 0;
-    font-size: 1.8rem;
-    font-weight: bold;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
   }
 
   .nav-links {
@@ -86,10 +106,13 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    gap: 0;
+    gap: 1rem;
   }
 
-  .nav-links li {
+  .nav-actions {
+    display: flex;
+    align-items: center;
+  }  .nav-links li {
     margin: 0;
   }
 
@@ -137,6 +160,12 @@
       text-align: center;
     }
 
+    .nav-right {
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
+
     .nav-links {
       flex-wrap: wrap;
       justify-content: center;
@@ -146,6 +175,11 @@
     .nav-links a {
       padding: 0.5rem 1rem;
       font-size: 0.9rem;
+    }
+
+    .nav-actions {
+      width: 100%;
+      justify-content: center;
     }
 
     .main-content {

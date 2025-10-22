@@ -2,6 +2,7 @@
   import { push, link } from 'svelte-spa-router';
   import { formatDate } from '../lib/utils.js';
   import { mockJobs, mockExecutionHistory } from '../lib/mockData.js';
+  import { dateRange, calculateSuccessRateForRange } from '../lib/stores.js';
   import StatusBadge from '../components/StatusBadge.svelte';
   import JobDetail from './JobDetail.svelte';
   
@@ -10,6 +11,20 @@
   
   // Use imported mock data
   let jobs = mockJobs;
+  let currentDateRange = {};
+
+  // Subscribe to date range changes
+  dateRange.subscribe(range => {
+    currentDateRange = range;
+  });
+
+  // Calculate filtered success rates based on date range
+  $: filteredJobs = jobs.map(job => ({
+    ...job,
+    // For demo purposes, calculate success rate based on mock execution history
+    // In real implementation, this would filter actual execution data by date
+    successRate: calculateSuccessRateForRange(mockExecutionHistory, currentDateRange)
+  }));
 
   // Mock execution history for selected job
   let selectedJob = null;
@@ -18,7 +33,7 @@
   // Watch for route parameter changes
   $: if (params.jobId) {
     const jobId = params.jobId;
-    const job = jobs.find(j => j.id === jobId || j.config.metadata.id === jobId);
+    const job = filteredJobs.find(j => j.id === jobId || j.config.metadata.id === jobId);
     if (job) {
       selectJob(job);
     } else {
@@ -59,10 +74,10 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-          {#each jobs as job}
+                <tbody>
+          {#each filteredJobs as job}
             <tr class="job-row">
-              <td class="job-name">
+              <td>
                 <a href="/job/{job.id}" use:link class="job-link">
                   {job.config.metadata.displayName}
                 </a>
@@ -71,11 +86,11 @@
                 <StatusBadge status={job.status} />
               </td>
               <td>{formatDate(job.lastRun)}</td>
-              <td>{job.executions}</td>
-              <td class="success-rate">{job.successRate}%</td>
+              <td>{job.executions.toLocaleString()}</td>
+              <td class="success-rate">{Math.round(job.successRate * 10) / 10}%</td>
               <td>
                 <a href="/job/{job.id}" use:link class="btn-view">
-                  View Job
+                  View Details
                 </a>
               </td>
             </tr>
@@ -140,10 +155,7 @@
     border-bottom: 1px solid #e9ecef;
   }
 
-  .job-name {
-    font-weight: 500;
-    color: #333;
-  }
+
 
   .job-link {
     color: inherit;
@@ -204,9 +216,7 @@
       color: #ffffff;
     }
     
-    .job-name {
-      color: #ffffff;
-    }
+
 
     .job-link {
       color: #ffffff;

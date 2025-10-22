@@ -1,12 +1,27 @@
 <script>
   import { getSuccessRateColor, calculateOverallSuccessRate } from '../lib/utils.js';
   import { mockDashboardJobs } from '../lib/mockData.js';
+  import { dateRange, calculateSuccessRateForRange } from '../lib/stores.js';
   import StatusBadge from '../components/StatusBadge.svelte';
 
   // Use imported mock data
   let jobs = mockDashboardJobs;
+  let currentDateRange = {};
 
-  $: overallSuccessRate = calculateOverallSuccessRate(jobs);
+  // Subscribe to date range changes
+  dateRange.subscribe(range => {
+    currentDateRange = range;
+  });
+
+  // Calculate filtered success rates based on date range
+  $: filteredJobs = jobs.map(job => ({
+    ...job,
+    // For demo purposes, we'll simulate filtering by adjusting success rate slightly
+    // In real implementation, this would filter actual execution data
+    successRate: job.successRate * (0.9 + Math.random() * 0.2) // Simulate variation
+  }));
+
+  $: overallSuccessRate = calculateOverallSuccessRate(filteredJobs);
 </script>
 
 <div class="dashboard">
@@ -29,23 +44,26 @@
     </div>
   </div>
 
-  <div class="jobs-section">
-    <h2>Job Status</h2>
-    <div class="jobs-grid">
-      {#each jobs as job}
-        <div class="job-card">
-          <div class="job-header">
-            <h3>{job.name}</h3>
-            <StatusBadge status={job.status} size="small" />
+      <div class="jobs-overview">
+      <h2>Recent Jobs</h2>
+      <div class="jobs-list">
+        {#each filteredJobs as job}
+          <div class="job-card">
+            <div class="job-header">
+              <h3>{job.name}</h3>
+              <StatusBadge status={job.status} size="small" />
+            </div>
+            <div class="job-details">
+              <p><strong>Last Run:</strong> {job.lastRun}</p>
+              <p><strong>Next Run:</strong> {job.nextRun}</p>
+              <p><strong>Success Rate:</strong> 
+                <span style="color: {getSuccessRateColor(job.successRate)}">{Math.round(job.successRate * 10) / 10}%</span>
+              </p>
+            </div>
           </div>
-          <div class="job-details">
-            <p><strong>Last Run:</strong> {job.lastRun}</p>
-            <p><strong>Next Run:</strong> {job.nextRun}</p>
-          </div>
-        </div>
-      {/each}
+        {/each}
+      </div>
     </div>
-  </div>
 </div>
 
 <style>
@@ -92,16 +110,7 @@
     color: #F44336;
   }
 
-  .jobs-section h2 {
-    color: #333;
-    margin-bottom: 1rem;
-  }
 
-  .jobs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
-  }
 
   .job-card {
     background: white;
@@ -134,7 +143,7 @@
       color: #ffffff;
     }
     
-    .jobs-section h2, .job-header h3 {
+    .job-header h3 {
       color: #ffffff;
     }
     

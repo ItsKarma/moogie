@@ -1,10 +1,23 @@
 <script>
   import { push } from 'svelte-spa-router';
   import { getStatusColor, getCheckTypeColor, formatDate, formatDuration, formatLabels } from '../lib/utils.js';
+  import { dateRange, filterExecutionsByDateRange, calculateSuccessRateForRange } from '../lib/stores.js';
   import StatusBadge from '../components/StatusBadge.svelte';
   
   export let selectedJob;
   export let executionHistory;
+
+  let currentDateRange = {};
+  
+  // Subscribe to date range changes
+  dateRange.subscribe(range => {
+    currentDateRange = range;
+  });
+
+  // Filter execution history and calculate metrics based on date range
+  $: filteredExecutions = filterExecutionsByDateRange(executionHistory, currentDateRange);
+  $: filteredSuccessRate = calculateSuccessRateForRange(executionHistory, currentDateRange);
+  $: filteredExecutionCount = filteredExecutions.length;
 
   function goBack() {
     push('/jobs');
@@ -45,11 +58,11 @@
     </div>
     <div class="summary-card">
       <h3>Total Executions</h3>
-      <div class="summary-number">{selectedJob.executions}</div>
+      <div class="summary-number">{filteredExecutionCount}</div>
     </div>
     <div class="summary-card">
       <h3>Success Rate</h3>
-      <div class="summary-number">{selectedJob.successRate}%</div>
+      <div class="summary-number">{filteredSuccessRate}%</div>
     </div>
     <div class="summary-card">
       <h3>Last Run</h3>
@@ -154,7 +167,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each executionHistory as execution, index}
+          {#each filteredExecutions as execution, index}
             <tr class="history-row">
               <td>{formatDate(execution.timestamp)}</td>
               <td>
