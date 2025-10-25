@@ -1,0 +1,32 @@
+# Development override for docker-compose
+# Use: docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up
+
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      # Mount source code for development (if you want to rebuild)
+      - ./api:/app/src:ro
+    environment:
+      - APP_ENV=development
+      - GIN_MODE=debug
+    # Override entrypoint for faster development
+    # entrypoint: ["./server"]
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        - MOOGIE_API_URL=http://localhost:8080
+    # Mount source for development
+    volumes:
+      - ./ui/src:/app/src:ro
+
+  # Enable pgAdmin for database management in development
+  pgadmin:
+    profiles: [] # Remove from profiles to always run in dev

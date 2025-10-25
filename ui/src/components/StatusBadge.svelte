@@ -17,7 +17,7 @@
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-lg);
     color: white;
-    font-size: 0.8rem;
+    font-size: var(--font-sm);
     font-weight: bold;
     text-align: center;
     display: inline-block;
@@ -25,11 +25,11 @@
 
   .status-badge.large {
     padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 1rem;
+    font-size: var(--font-base);
   }
 
   .status-badge.small {
     padding: 0.2rem var(--spacing-sm);
-    font-size: 0.7rem;
+    font-size: var(--font-xs);
   }
 </style>

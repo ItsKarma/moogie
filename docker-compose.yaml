@@ -1,29 +1,150 @@
-version: "3.8"
-
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: moogie-postgres
+    environment:
+      POSTGRES_DB: moogie
+      POSTGRES_USER: moogie
+      POSTGRES_PASSWORD: moogie
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-data.sql:/docker-entrypoint-initdb.d/init-data.sql:ro
+    networks:
+      - moogie-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moogie -d moogie"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   api:
-    build: ./api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
     container_name: moogie-api
     ports:
       - "8080:8080"
     environment:
-      - ENV=development
+      - APP_ENV=development
+      - APP_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=moogie
+      - DB_PASSWORD=moogie
+      - DB_NAME=moogie
+      - DB_SSLMODE=disable
+      - ALLOWED_ORIGINS=http://localhost:3000,http://ui:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - moogie-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   ui:
     build:
       context: ./ui
+      dockerfile: Dockerfile
       args:
-        - MOOGIE_API_URL=http://api:8080
+        - MOOGIE_API_URL=http://localhost:8080
     container_name: moogie-ui
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - moogie-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    container_name: moogie-docs
+    ports:
+      - "3001:3000"
+    networks:
+      - moogie-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Database seeder - run once to populate with sample data
+  seeder:
+    build:
+      context: ./seed
+      dockerfile: Dockerfile
+    container_name: moogie-seeder
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=moogie
+      - DB_PASSWORD=moogie
+      - DB_NAME=moogie
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - moogie-network
+    restart: "no" # Run once and exit
+    profiles:
+      - seed
+
+  # Optional: Database admin interface
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: moogie-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@moogie.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - moogie-network
+    profiles:
+      - admin
 
 networks:
   moogie-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin_data:

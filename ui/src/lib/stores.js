@@ -1,4 +1,5 @@
-import { writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
+import { apiService } from "./api.js";
 
 // Default to last 7 days
 function getDefaultDateRange() {
@@ -125,3 +126,96 @@ export function calculateSuccessRateForRange(executions, range) {
     10
   );
 }
+
+// Create API-driven stores
+
+// Jobs store with loading and error states
+function createJobsStore() {
+  const { subscribe, set, update } = writable({
+    data: [],
+    loading: false,
+    error: null,
+  });
+
+  return {
+    subscribe,
+    async fetchJobs(from, to) {
+      update((state) => ({ ...state, loading: true, error: null }));
+
+      try {
+        const jobs = await apiService.getJobs(from, to);
+        set({ data: jobs, loading: false, error: null });
+      } catch (error) {
+        set({ data: [], loading: false, error: error.message });
+      }
+    },
+    reset: () => set({ data: [], loading: false, error: null }),
+  };
+}
+
+// Dashboard store
+function createDashboardStore() {
+  const { subscribe, set, update } = writable({
+    data: null,
+    loading: false,
+    error: null,
+  });
+
+  return {
+    subscribe,
+    async fetchSummary(from, to) {
+      update((state) => ({ ...state, loading: true, error: null }));
+
+      try {
+        const summary = await apiService.getDashboardSummary(from, to);
+        set({ data: summary, loading: false, error: null });
+      } catch (error) {
+        set({ data: null, loading: false, error: error.message });
+      }
+    },
+    reset: () => set({ data: null, loading: false, error: null }),
+  };
+}
+
+// Individual job store for job details page
+function createJobDetailStore() {
+  const { subscribe, set, update } = writable({
+    data: null,
+    loading: false,
+    error: null,
+  });
+
+  return {
+    subscribe,
+    async fetchJob(id, from, to, limit = 100) {
+      update((state) => ({ ...state, loading: true, error: null }));
+
+      try {
+        const job = await apiService.getJob(id, from, to, limit);
+        set({ data: job, loading: false, error: null });
+      } catch (error) {
+        set({ data: null, loading: false, error: error.message });
+      }
+    },
+    reset: () => set({ data: null, loading: false, error: null }),
+  };
+}
+
+// Export store instances
+export const jobsStore = createJobsStore();
+export const dashboardStore = createDashboardStore();
+export const jobDetailStore = createJobDetailStore();
+
+// Derived store that automatically fetches data when date range changes
+export const autoJobsStore = derived([dateRange, jobsStore], ([range], set) => {
+  // Fetch jobs when date range changes
+  jobsStore.fetchJobs(range.from, range.to);
+});
+
+export const autoDashboardStore = derived(
+  [dateRange, dashboardStore],
+  ([range], set) => {
+    // Fetch dashboard data when date range changes
+    dashboardStore.fetchSummary(range.from, range.to);
+  }
+);

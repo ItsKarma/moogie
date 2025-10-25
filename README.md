@@ -1,10 +1,110 @@
 # Moogie
 
-Synthetics Runner
+Synthetics Runner with Real-time Dashboard
 
 ## Overview
 
 Moogie is a synthetics monitoring system that runs native in Kubernetes utilizing Cron Jobs to execute your synthetic checks. Instead of configuring checks through a UI, Moogie uses YAML configuration files that follow Kubernetes-style resource definitions.
+
+The system consists of:
+
+- **📊 Dashboard UI** - Svelte-based monitoring dashboard
+- **🔌 API Server** - Go/Gin REST API with WebSocket support
+- **🗄️ Database** - PostgreSQL for storing job configs and execution results
+- **🔄 Runner** - Kubernetes CronJobs that execute checks and report results
+
+## Quick Start with Docker
+
+### Prerequisites
+
+- Docker & Docker Compose installed
+- 8080, 3000, and 5432 ports available
+
+### Start the Full Stack
+
+1. **Clone and navigate to the project:**
+
+```bash
+git clone <repository-url>
+cd moogie
+```
+
+2. **Start everything with Docker Compose:**
+
+```bash
+# Start the complete stack (database + api + ui)
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+```
+
+3. **Access the application:**
+
+- 🌐 **Dashboard**: http://localhost:3000
+- 🔌 **API**: http://localhost:8080/api/v1
+- ❤️ **Health Check**: http://localhost:8080/health
+- 📡 **WebSocket**: ws://localhost:8080/ws
+
+### Optional: Database Admin Interface
+
+To access PostgreSQL admin interface:
+
+```bash
+# Start with pgAdmin included
+docker-compose --profile admin up -d
+
+# Access pgAdmin at http://localhost:5050
+# Email: admin@moogie.local
+# Password: admin
+```
+
+### Development Commands
+
+```bash
+# View logs
+docker-compose logs -f api
+docker-compose logs -f ui
+
+# Rebuild specific service
+docker-compose up --build api
+docker-compose up --build ui
+
+# Stop everything
+docker-compose down
+
+# Stop and remove volumes (clean slate)
+docker-compose down -v
+```
+
+### Database Access
+
+PostgreSQL is accessible at:
+
+- **Host**: localhost:5432
+- **Database**: moogie
+- **User**: moogie
+- **Password**: moogie
+
+### Seed Sample Data
+
+To populate the database with realistic sample data for testing:
+
+```bash
+# Run the seeder to create 15 jobs with 30 days of execution history
+docker-compose run --rm seeder
+
+# Or include seeding when starting the stack
+docker-compose --profile seed up -d
+```
+
+The seeder creates:
+
+- 15 monitoring jobs across all check types (HTTP, TCP, DNS, SSL, Ping)
+- 30+ days of execution history with realistic success rates (70-99%)
+- Over 30,000 execution records with varied response times and error conditions
+
+⚠️ **Warning**: The seeder clears all existing data before creating new sample data.
 
 ## Configuration
 
@@ -124,6 +224,87 @@ Use descriptive names for your check files:
 - `api-health-check.yaml`
 - `database-tcp-check.yaml`
 - `ssl-certificate-monitor.yaml`
+
+## Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Dashboard UI  │    │   API Server    │    │   PostgreSQL    │
+│   (Svelte)      │◄──►│   (Go/Gin)      │◄──►│   Database      │
+│   Port 3000     │    │   Port 8080     │    │   Port 5432     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              ▲
+                              │ POST /api/v1/executions
+                              ▼
+                       ┌─────────────────┐
+                       │ Runner Service  │
+                       │ (K8s CronJobs)  │
+                       └─────────────────┘
+```
+
+## Development
+
+### Individual Services
+
+- **UI Development**: See `ui/README.md`
+- **API Development**: See `api/README.md`
+- **Runner Development**: See `runner/README.md`
+
+### Sample Data
+
+The Docker setup includes sample monitoring jobs:
+
+- API Health Check
+- Database TCP Check
+- DNS Resolution Check
+- Ping Connectivity Check
+- SSL Certificate Check
+
+## Troubleshooting
+
+### Common Issues
+
+**Container won't start:**
+
+```bash
+# Check logs
+docker-compose logs api
+docker-compose logs ui
+docker-compose logs postgres
+```
+
+**Database connection errors:**
+
+```bash
+# Ensure PostgreSQL is ready
+docker-compose ps postgres
+
+# Check if migrations ran
+docker-compose exec api goose -dir migrations postgres "postgres://moogie:moogie@postgres:5432/moogie?sslmode=disable" status
+```
+
+**Port conflicts:**
+
+```bash
+# Check what's using the ports
+lsof -i :3000
+lsof -i :8080
+lsof -i :5432
+
+# Use different ports if needed
+docker-compose up -e "API_PORT=8081" -e "UI_PORT=3001"
+```
+
+**Clean restart:**
+
+```bash
+# Stop everything and remove volumes
+docker-compose down -v
+
+# Remove images and rebuild
+docker-compose build --no-cache
+docker-compose up
+```
 
 ## Deploying
 

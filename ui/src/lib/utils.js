@@ -15,17 +15,22 @@ function getCSSVar(variable) {
  * @returns {string} CSS variable reference or hex color
  */
 export function getStatusColor(status) {
-  switch (status) {
+  const statusLower = status.toLowerCase();
+  switch (statusLower) {
     case "running":
       return getCSSVar("status-running");
     case "success":
       return getCSSVar("status-success");
     case "failed":
+    case "failure":
+    case "error":
       return getCSSVar("status-failed");
     case "warning":
       return getCSSVar("status-warning");
     case "timeout":
       return getCSSVar("status-timeout");
+    case "disabled":
+      return getCSSVar("status-default");
     default:
       return getCSSVar("status-default");
   }
@@ -51,14 +56,19 @@ export function getSuccessRateColor(rate) {
 export function getCheckTypeColor(kind) {
   switch (kind) {
     case "HttpCheck":
+    case "http":
       return getCSSVar("check-http");
     case "TcpCheck":
+    case "tcp":
       return getCSSVar("check-tcp");
     case "DnsCheck":
+    case "dns":
       return getCSSVar("check-dns");
     case "SslCheck":
+    case "ssl":
       return getCSSVar("check-ssl");
     case "PingCheck":
+    case "ping":
       return getCSSVar("check-ping");
     default:
       return getCSSVar("status-default");

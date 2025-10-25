@@ -40,12 +40,17 @@
 
   /* Base colors */
   --text-color: #333;
+  --text-primary: #333;
   --text-secondary: #666;
   --text-muted: #999;
   --background-color: #f5f5f5;
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #e9ecef;
   --card-background: #ffffff;
+  --card-bg: #ffffff;
   --border-color: #e9ecef;
   --border-color-light: #f0f0f0;
+  --hover-bg: #f8f9fa;
 
   /* Interactive elements */
   --button-background: #f5f5f5;
@@ -60,6 +65,7 @@
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
 
   /* Border radius */
   --radius-sm: 4px;
@@ -67,8 +73,42 @@
   --radius-lg: 20px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Font sizes */
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-md: 0.9rem;
+  --font-base: 1rem;
+  --font-lg: 1.25rem;
+  --font-xl: 1.5rem;
+  --font-xxl: 2rem;
+}
+
+/* Dark theme via class (user preference) */
+:root.theme-dark,
+:root[data-theme="dark"] {
+  --text-color: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted: #999999;
+  --background-color: #1a1a1a;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --card-background: #2a2a2a;
+  --card-bg: #2a2a2a;
+  --border-color: #555555;
+  --border-color-light: #444444;
+  --hover-bg: #333333;
+
+  --button-background: #444444;
+  --button-hover: #555555;
+  --table-header: #333333;
+  --table-hover: #333333;
+  --code-background: #333333;
 }
 
 * {
@@ -82,16 +122,21 @@ body {
   background-color: var(--background-color);
 }
 
-/* Dark theme overrides */
+/* Dark theme via system preference (fallback when no class is set) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.theme-light):not(.theme-dark) {
     --text-color: #ffffff;
+    --text-primary: #ffffff;
     --text-secondary: #cccccc;
     --text-muted: #999999;
     --background-color: #1a1a1a;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
     --card-background: #2a2a2a;
+    --card-bg: #2a2a2a;
     --border-color: #555555;
     --border-color-light: #444444;
+    --hover-bg: #333333;
 
     --button-background: #444444;
     --button-hover: #555555;
@@ -157,16 +202,33 @@ a {
   background: #a1a1a1;
 }
 
+/* Dark scrollbar for dark theme */
+.theme-dark ::-webkit-scrollbar-track,
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+.theme-dark ::-webkit-scrollbar-thumb,
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.theme-dark ::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Fallback for system preference */
 @media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-track {
+  :root:not(.theme-light) ::-webkit-scrollbar-track {
     background: #2a2a2a;
   }
 
-  ::-webkit-scrollbar-thumb {
+  :root:not(.theme-light) ::-webkit-scrollbar-thumb {
     background: #555;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  :root:not(.theme-light) ::-webkit-scrollbar-thumb:hover {
     background: #666;
   }
 }

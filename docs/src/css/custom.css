@@ -1,0 +1,158 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  /* Moogie brand colors - reddish brown theme */
+  --ifm-color-primary: #7d471f;
+  --ifm-color-primary-dark: #6b3d1b;
+  --ifm-color-primary-darker: #663918;
+  --ifm-color-primary-darkest: #542f14;
+  --ifm-color-primary-light: #8f5123;
+  --ifm-color-primary-lighter: #955526;
+  --ifm-color-primary-lightest: #a1612d;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(125, 71, 31, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+  /* Lighter versions for dark mode */
+  --ifm-color-primary: #d4a574;
+  --ifm-color-primary-dark: #ce9862;
+  --ifm-color-primary-darker: #cb9156;
+  --ifm-color-primary-darkest: #b97f3f;
+  --ifm-color-primary-light: #dab286;
+  --ifm-color-primary-lighter: #ddb992;
+  --ifm-color-primary-lightest: #e8ccaa;
+  --docusaurus-highlighted-code-line-bg: rgba(125, 71, 31, 0.3);
+}
+
+/* Custom styles for Moogie documentation */
+.hero__title {
+  background: linear-gradient(45deg, #7d471f, #d4a574);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero__subtitle {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 1.2rem;
+}
+
+/* API endpoint styling */
+.api-endpoint {
+  background: var(--ifm-color-emphasis-100);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.api-method {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-right: 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.api-method--get {
+  background: #28a745;
+  color: white;
+}
+
+.api-method--post {
+  background: #007bff;
+  color: white;
+}
+
+.api-method--put {
+  background: #ffc107;
+  color: #212529;
+}
+
+.api-method--delete {
+  background: #dc3545;
+  color: white;
+}
+
+/* Status badge styling */
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge--success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-badge--failure {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-badge--warning {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+/* Code block enhancements */
+.prism-code {
+  font-size: 0.9rem;
+}
+
+/* Table styling */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table th {
+  background-color: var(--ifm-color-emphasis-100);
+  font-weight: 600;
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Custom admonition colors */
+.admonition {
+  margin: 16px 0;
+}
+
+.admonition-heading h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero__title {
+    font-size: 2rem;
+  }
+
+  .hero__subtitle {
+    font-size: 1rem;
+  }
+
+  .api-endpoint {
+    padding: 12px;
+  }
+}

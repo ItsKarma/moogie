@@ -5,6 +5,35 @@
     <link rel="icon" type="image/svg+xml" href="/moogie.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Moogie</title>
+    <!-- Apply theme immediately to prevent flash of unstyled content -->
+    <script>
+      (function () {
+        try {
+          const THEME_KEY = "moogie-theme";
+          const stored = localStorage.getItem(THEME_KEY);
+          const theme = stored || "system";
+
+          let effectiveTheme;
+          if (theme === "system") {
+            effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)")
+              .matches
+              ? "dark"
+              : "light";
+          } else {
+            effectiveTheme = theme;
+          }
+
+          document.documentElement.classList.add("theme-" + effectiveTheme);
+          document.documentElement.setAttribute("data-theme", effectiveTheme);
+        } catch (e) {
+          // If localStorage fails, fall back to system preference
+          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.classList.add("theme-dark");
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

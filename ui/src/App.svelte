@@ -3,6 +3,7 @@
   import Router, { link, location } from 'svelte-spa-router';
   import Dashboard from './pages/Dashboard.svelte';
   import Jobs from './pages/Jobs.svelte';
+  import Settings from './pages/Settings.svelte';
   import DateRangePicker from './components/DateRangePicker.svelte';
   import { dateRange } from './lib/stores.js';
 
@@ -12,6 +13,7 @@
     '/dashboard': Dashboard,
     '/jobs': Jobs,
     '/job/:jobId': Jobs,
+    '/settings': Settings,
   };
 
   // Use the reactive location store from svelte-spa-router
@@ -48,6 +50,15 @@
               class:active={currentPath === '/jobs' || currentPath.startsWith('/job/')}
             >
               Jobs
+            </a>
+          </li>
+          <li>
+            <a 
+              href="/settings" 
+              use:link 
+              class:active={currentPath === '/settings'}
+            >
+              Settings
             </a>
           </li>
         </ul>
@@ -112,7 +123,10 @@
   .nav-actions {
     display: flex;
     align-items: center;
-  }  .nav-links li {
+    gap: var(--spacing-md);
+  }
+
+  .nav-links li {
     margin: 0;
   }
 
