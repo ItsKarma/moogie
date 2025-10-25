@@ -49,6 +49,9 @@ build/
 # Vite
 .vite/
 
+# Docusaurus
+.docusaurus/
+
 # Environment variables
 .env
 .env.local
