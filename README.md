@@ -8,10 +8,29 @@ Moogie is a synthetics monitoring system that runs native in Kubernetes utilizin
 
 The system consists of:
 
-- **📊 Dashboard UI** - Svelte-based monitoring dashboard
-- **🔌 API Server** - Go/Gin REST API with WebSocket support
+- **📊 Dashboard UI** - Svelte-based real-time monitoring dashboard with split-view, response time graphs, and theme support
+- **🔌 API Server** - Go/Gin REST API with WebSocket support for real-time updates
 - **🗄️ Database** - PostgreSQL for storing job configs and execution results
 - **🔄 Runner** - Kubernetes CronJobs that execute checks and report results
+
+## Features
+
+### Dashboard
+
+- **Split-view interface** - Job list sidebar with details panel
+- **Response time graphs** - Chart.js powered time series visualization
+- **Date range filtering** - Quick ranges (1h-7d) and custom date/time selection
+- **Smart sorting** - Failed jobs automatically appear at top
+- **Status indicators** - Visual pills showing last 5 execution results
+- **Theme support** - Light, Dark, and System preference modes
+- **Real-time updates** - WebSocket integration for live execution data (in progress)
+
+### API
+
+- **RESTful endpoints** - Job listing, details, and execution history
+- **ISO 8601 timestamps** - Consistent date/time handling with timezone support
+- **WebSocket support** - Real-time execution broadcasts
+- **Health checks** - Built-in health monitoring endpoints
 
 ## Quick Start with Docker
 
@@ -88,23 +107,24 @@ PostgreSQL is accessible at:
 
 ### Seed Sample Data
 
-To populate the database with realistic sample data for testing:
+The database is automatically initialized with schema and sample data when first started. The `init-data.sql` script provides:
+
+- **15 sample jobs** - Across all check types (HTTP, TCP, DNS, SSL, Ping)
+- **1000 executions per job** - 180 days of execution history
+- **Realistic data** - Varied response times, success rates (70-99%), and error conditions
+- **Recent failures** - Specific recent executions to visualize failure states
+
+The init script runs automatically on first database startup. To reset data:
 
 ```bash
-# Run the seeder to create 15 jobs with 30 days of execution history
-docker-compose run --rm seeder
+# Stop and remove volumes
+docker-compose down -v
 
-# Or include seeding when starting the stack
-docker-compose --profile seed up -d
+# Restart (will reinitialize database)
+docker-compose up -d
 ```
 
-The seeder creates:
-
-- 15 monitoring jobs across all check types (HTTP, TCP, DNS, SSL, Ping)
-- 30+ days of execution history with realistic success rates (70-99%)
-- Over 30,000 execution records with varied response times and error conditions
-
-⚠️ **Warning**: The seeder clears all existing data before creating new sample data.
+⚠️ **Note**: The legacy `seed/` directory contains a Go-based seeder that is no longer required. The SQL init script now handles all seeding.
 
 ## Configuration
 
@@ -246,19 +266,21 @@ Use descriptive names for your check files:
 
 ### Individual Services
 
-- **UI Development**: See `ui/README.md`
-- **API Development**: See `api/README.md`
-- **Runner Development**: See `runner/README.md`
+- **UI Development**: See `ui/README.md` for detailed component architecture, state management, and feature documentation
+- **API Development**: See `api/README.md` for Go development, database migrations, and API endpoints
+- **Runner Development**: See `runner/README.md` for Kubernetes CronJob implementation
 
 ### Sample Data
 
-The Docker setup includes sample monitoring jobs:
+The Docker setup includes sample monitoring jobs with realistic execution history:
 
-- API Health Check
-- Database TCP Check
-- DNS Resolution Check
-- Ping Connectivity Check
-- SSL Certificate Check
+- API Health Checks (production, staging, users endpoint)
+- Database TCP Checks
+- DNS Resolution Checks
+- Ping Connectivity Checks
+- SSL Certificate Checks
+
+All jobs include 180 days of execution history with varied response times and realistic success rates (70-99%).
 
 ## Troubleshooting
 

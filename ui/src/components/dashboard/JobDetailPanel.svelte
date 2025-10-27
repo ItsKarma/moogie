@@ -11,7 +11,7 @@
     Legend,
     Filler
   } from 'chart.js';
-  import { getSuccessRateColor } from '../../lib/utils.js';
+  import { getSuccessRateColor, timeAgo } from '../../lib/utils.js';
   import { dateRange } from '../../lib/stores.js';
 
   // Register Chart.js components
@@ -199,18 +199,6 @@
       }
     }
   };
-
-  function timeAgo(dateString) {
-    if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-    
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return `${Math.floor(seconds / 86400)}d ago`;
-  }
 </script>
 
 <div class="detail-panel">
@@ -439,27 +427,6 @@
   .execution-response {
     font-weight: 600;
     color: var(--text-primary);
-  }
-
-  .pill {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .pill-success {
-    background: var(--status-success);
-  }
-
-  .pill-failed,
-  .pill-error {
-    background: var(--status-failed);
-  }
-
-  .pill-warning,
-  .pill-timeout {
-    background: var(--status-warning);
   }
 
   .detail-empty {

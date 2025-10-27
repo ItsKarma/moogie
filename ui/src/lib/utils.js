@@ -114,3 +114,20 @@ export function calculateOverallSuccessRate(jobs) {
   const totalRate = jobs.reduce((sum, job) => sum + job.successRate, 0);
   return Math.round((totalRate / jobs.length) * 10) / 10;
 }
+
+/**
+ * Format timestamp as time ago string
+ * @param {string} dateString - ISO date string
+ * @returns {string} Human-readable time ago string (e.g., "2m ago", "3h ago")
+ */
+export function timeAgo(dateString) {
+  if (!dateString) return "Never";
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return "Just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}

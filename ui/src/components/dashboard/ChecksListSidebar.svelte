@@ -282,27 +282,6 @@
     padding-left: var(--spacing-sm);
   }
 
-  .pill {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .pill-success {
-    background: var(--status-success);
-  }
-
-  .pill-failed,
-  .pill-error {
-    background: var(--status-failed);
-  }
-
-  .pill-warning,
-  .pill-timeout {
-    background: var(--status-warning);
-  }
-
   .no-data-small {
     font-size: var(--font-xs);
     color: var(--text-secondary);
