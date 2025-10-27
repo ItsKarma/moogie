@@ -28,11 +28,17 @@
   }
 
   function handleFromDateChange(event) {
-    tempFromDate = event.target.value;
+    const dateValue = event.target.value;
+    if (dateValue) {
+      tempFromDate = new Date(dateValue).toISOString();
+    }
   }
 
   function handleToDateChange(event) {
-    tempToDate = event.target.value;
+    const dateValue = event.target.value;
+    if (dateValue) {
+      tempToDate = new Date(dateValue).toISOString();
+    }
   }
 
   function setQuickRange(days) {
@@ -40,8 +46,8 @@
     const from = new Date();
     from.setDate(from.getDate() - days);
     
-    tempFromDate = from.toISOString().split('T')[0];
-    tempToDate = to.toISOString().split('T')[0];
+    tempFromDate = from.toISOString();
+    tempToDate = to.toISOString();
   }
 
   function setQuickRangeHours(hours) {
@@ -49,8 +55,8 @@
     const from = new Date();
     from.setHours(from.getHours() - hours);
     
-    tempFromDate = from.toISOString().split('T')[0];
-    tempToDate = to.toISOString().split('T')[0];
+    tempFromDate = from.toISOString();
+    tempToDate = to.toISOString();
   }
 
   function applyDateRange() {
@@ -73,7 +79,7 @@
       return;
     }
 
-    // Apply the changes
+    // Apply the changes with ISO 8601 format
     dateRange.setRange(tempFromDate, tempToDate);
     showPicker = false;
   }
@@ -98,8 +104,22 @@
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
+  }
+  
+  // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:MM)
+  function toDateTimeLocal(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   // Check if temp values are different from current values
@@ -145,21 +165,21 @@
             <label for="from-date">From</label>
             <input 
               id="from-date"
-              type="date" 
-              bind:value={tempFromDate}
+              type="datetime-local" 
+              value={toDateTimeLocal(tempFromDate)}
               on:change={handleFromDateChange}
-              max={tempToDate}
+              max={toDateTimeLocal(tempToDate)}
             />
           </div>
           <div class="input-group">
             <label for="to-date">To</label>
             <input 
               id="to-date"
-              type="date" 
-              bind:value={tempToDate}
+              type="datetime-local" 
+              value={toDateTimeLocal(tempToDate)}
               on:change={handleToDateChange}
-              min={tempFromDate}
-              max={new Date().toISOString().split('T')[0]}
+              min={toDateTimeLocal(tempFromDate)}
+              max={toDateTimeLocal(new Date().toISOString())}
             />
           </div>
         </div>
@@ -291,7 +311,8 @@
     color: var(--text-secondary);
   }
 
-  input[type="date"] {
+  input[type="date"],
+  input[type="datetime-local"] {
     padding: var(--spacing-sm);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
@@ -301,9 +322,20 @@
     transition: border-color 0.2s ease;
   }
 
-  input[type="date"]:focus {
+  input[type="date"]:focus,
+  input[type="datetime-local"]:focus {
     outline: none;
     border-color: var(--primary-color);
+  }
+
+  /* Fix for datetime-local in dark mode */
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(var(--invert-icon, 0));
+  }
+
+  :root.theme-dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  :root[data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
   }
 
   .picker-actions {

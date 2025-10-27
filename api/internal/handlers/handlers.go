@@ -35,12 +35,12 @@ func NewHandler(
 }
 
 // @Summary Get all jobs
-// @Description Get all monitoring jobs with their success rates and recent metrics
+// @Description Get all jobs with optional date range filter
 // @Tags jobs
 // @Accept json
 // @Produce json
-// @Param from query string false "Start date (YYYY-MM-DD format)"
-// @Param to query string false "End date (YYYY-MM-DD format)"
+// @Param from query string false "Start date/time (ISO 8601: 2006-01-02T15:04:05Z)"
+// @Param to query string false "End date/time (ISO 8601: 2006-01-02T15:04:05Z)"
 // @Success 200 {array} models.Job
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -63,13 +63,13 @@ func (h *Handler) GetJobs(c *gin.Context) {
 }
 
 // @Summary Get job by ID
-// @Description Get a specific job with its execution history
+// @Description Get a job by its ID with execution history
 // @Tags jobs
 // @Accept json
 // @Produce json
 // @Param id path int true "Job ID"
-// @Param from query string false "Start date for executions (YYYY-MM-DD format)"
-// @Param to query string false "End date for executions (YYYY-MM-DD format)"
+// @Param from query string false "Start date/time for executions (ISO 8601: 2006-01-02T15:04:05Z)"
+// @Param to query string false "End date/time for executions (ISO 8601: 2006-01-02T15:04:05Z)"
 // @Param limit query int false "Limit number of executions returned" default(100)
 // @Success 200 {object} models.Job
 // @Failure 400 {object} map[string]string
@@ -145,12 +145,12 @@ func (h *Handler) CreateExecution(c *gin.Context) {
 }
 
 // @Summary Get dashboard summary
-// @Description Get aggregated dashboard metrics and recent activity
+// @Description Get aggregated dashboard data with job summaries
 // @Tags dashboard
 // @Accept json
 // @Produce json
-// @Param from query string false "Start date (YYYY-MM-DD format)"
-// @Param to query string false "End date (YYYY-MM-DD format)"
+// @Param from query string false "Start date/time (ISO 8601: 2006-01-02T15:04:05Z)"
+// @Param to query string false "End date/time (ISO 8601: 2006-01-02T15:04:05Z)"
 // @Success 200 {object} models.DashboardSummary
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -194,6 +194,7 @@ func (h *Handler) HealthCheck(c *gin.Context) {
 }
 
 // parseDateRange parses the from and to query parameters
+// Expects ISO 8601 timestamp format (2006-01-02T15:04:05Z)
 // Returns default range (last 7 days) if not provided
 func parseDateRange(c *gin.Context) (time.Time, time.Time, error) {
 	fromStr := c.Query("from")
@@ -207,18 +208,15 @@ func parseDateRange(c *gin.Context) (time.Time, time.Time, error) {
 		to = time.Now()
 		from = to.AddDate(0, 0, -7)
 	} else {
-		from, err = time.Parse("2006-01-02", fromStr)
+		from, err = time.Parse(time.RFC3339, fromStr)
 		if err != nil {
-			return time.Time{}, time.Time{}, fmt.Errorf("invalid from date format, expected YYYY-MM-DD")
+			return time.Time{}, time.Time{}, fmt.Errorf("invalid from date format, expected ISO 8601 (2006-01-02T15:04:05Z)")
 		}
 
-		to, err = time.Parse("2006-01-02", toStr)
+		to, err = time.Parse(time.RFC3339, toStr)
 		if err != nil {
-			return time.Time{}, time.Time{}, fmt.Errorf("invalid to date format, expected YYYY-MM-DD")
+			return time.Time{}, time.Time{}, fmt.Errorf("invalid to date format, expected ISO 8601 (2006-01-02T15:04:05Z)")
 		}
-
-		// Set to end of day for 'to' date
-		to = to.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 	}
 
 	return from, to, nil

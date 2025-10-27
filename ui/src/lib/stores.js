@@ -8,8 +8,8 @@ function getDefaultDateRange() {
   from.setDate(from.getDate() - 7);
 
   return {
-    from: from.toISOString().split("T")[0], // YYYY-MM-DD format
-    to: to.toISOString().split("T")[0],
+    from: from.toISOString(), // ISO 8601 format with time
+    to: to.toISOString(),
   };
 }
 
@@ -21,14 +21,14 @@ function getDateRangeFromURL() {
   const fromParam = params.get("from");
   const toParam = params.get("to");
 
-  // Validate date format (YYYY-MM-DD)
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  // Validate ISO 8601 format
+  const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
   if (
     fromParam &&
     toParam &&
-    dateRegex.test(fromParam) &&
-    dateRegex.test(toParam)
+    iso8601Regex.test(fromParam) &&
+    iso8601Regex.test(toParam)
   ) {
     // Ensure from date is not after to date
     const fromDate = new Date(fromParam);

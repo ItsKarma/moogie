@@ -12,6 +12,7 @@
     Filler
   } from 'chart.js';
   import { getSuccessRateColor } from '../../lib/utils.js';
+  import { dateRange } from '../../lib/stores.js';
 
   // Register Chart.js components
   ChartJS.register(
@@ -28,46 +29,94 @@
   export let selectedJob = null;
   
   $: job = selectedJob;
+  
+  let currentDateRange = {};
+  dateRange.subscribe(range => {
+    currentDateRange = range;
+  });
 
-  // Prepare chart data from all executions within date range
-  $: chartData = job?.executions && job.executions.length > 0 ? {
-    labels: job.executions
-      .slice()
-      .reverse()
-      .map(exec => {
-        const date = new Date(exec.timestamp);
-        return date.toLocaleString('en-US', { 
+  // Generate complete time series for the date range with actual data filled in
+  $: chartData = (() => {
+    if (!job || !currentDateRange.from || !currentDateRange.to) return null;
+    
+    const fromDate = new Date(currentDateRange.from);
+    const toDate = new Date(currentDateRange.to);
+    const executions = job.executions || [];
+    
+    // Calculate appropriate interval based on date range duration
+    const rangeDuration = toDate - fromDate;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const oneHourMs = 60 * 60 * 1000;
+    
+    let interval;
+    let maxPoints = 100; // Maximum number of points to show on graph
+    
+    if (rangeDuration <= 6 * oneHourMs) {
+      // <= 6 hours: 5 minute intervals
+      interval = 5 * 60 * 1000;
+    } else if (rangeDuration <= oneDayMs) {
+      // <= 1 day: 15 minute intervals
+      interval = 15 * 60 * 1000;
+    } else if (rangeDuration <= 7 * oneDayMs) {
+      // <= 7 days: 1 hour intervals
+      interval = oneHourMs;
+    } else {
+      // > 7 days: 6 hour intervals
+      interval = 6 * oneHourMs;
+    }
+    
+    // Generate time series
+    const timeSeries = [];
+    for (let time = fromDate.getTime(); time <= toDate.getTime(); time += interval) {
+      timeSeries.push(new Date(time));
+    }
+    
+    // Map executions to time buckets
+    const dataPoints = timeSeries.map(timestamp => {
+      // Find execution closest to this time bucket
+      const bucketTime = timestamp.getTime();
+      const execution = executions.find(exec => {
+        const execTime = new Date(exec.timestamp).getTime();
+        return Math.abs(execTime - bucketTime) < interval / 2;
+      });
+      
+      return {
+        timestamp,
+        execution
+      };
+    });
+    
+    return {
+      labels: dataPoints.map(point => {
+        return point.timestamp.toLocaleString('en-US', { 
           month: 'short',
           day: 'numeric',
           hour: '2-digit', 
           minute: '2-digit'
         });
       }),
-    datasets: [{
-      label: 'Response Time',
-      data: job.executions
-        .slice()
-        .reverse()
-        .map(exec => exec.response_time),
-      borderColor: 'rgba(161, 98, 7, 1)', // Warm brown
-      backgroundColor: 'rgba(161, 98, 7, 0.08)',
-      tension: 0.3,
-      fill: true,
-      pointRadius: 5,
-      pointHoverRadius: 7,
-      pointBackgroundColor: job.executions
-        .slice()
-        .reverse()
-        .map(exec => {
-          if (exec.status === 'success') return 'rgba(34, 197, 94, 1)';
-          if (exec.status === 'warning') return 'rgba(234, 179, 8, 1)';
+      datasets: [{
+        label: 'Response Time',
+        data: dataPoints.map(point => point.execution ? point.execution.response_time : null),
+        borderColor: 'rgba(161, 98, 7, 1)',
+        backgroundColor: 'rgba(161, 98, 7, 0.08)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: dataPoints.map(point => point.execution ? 5 : 0),
+        pointHoverRadius: dataPoints.map(point => point.execution ? 7 : 0),
+        pointBackgroundColor: dataPoints.map(point => {
+          if (!point.execution) return 'transparent';
+          if (point.execution.status === 'success') return 'rgba(34, 197, 94, 1)';
+          if (point.execution.status === 'warning') return 'rgba(234, 179, 8, 1)';
           return 'rgba(239, 68, 68, 1)';
         }),
-      pointBorderColor: 'rgba(255, 255, 255, 1)',
-      pointBorderWidth: 2,
-      borderWidth: 2
-    }]
-  } : null;
+        pointBorderColor: 'rgba(255, 255, 255, 1)',
+        pointBorderWidth: 2,
+        borderWidth: 2,
+        spanGaps: true // Connect lines across gaps
+      }]
+    };
+  })();
 
   $: chartOptions = {
     responsive: true,
@@ -94,8 +143,15 @@
             return items[0].label;
           },
           label: (context) => {
+            if (context.parsed.y === null) {
+              return 'No data';
+            }
             return `Response Time: ${context.parsed.y}ms`;
           }
+        },
+        filter: (tooltipItem) => {
+          // Only show tooltip for actual data points
+          return tooltipItem.parsed.y !== null;
         }
       }
     },
