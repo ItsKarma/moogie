@@ -172,6 +172,7 @@
             family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
           },
           padding: 8,
+          maxTicksLimit: 7,
           callback: (value) => `${value}ms`
         }
       },
@@ -190,7 +191,10 @@
           },
           maxRotation: 45,
           minRotation: 45,
-          padding: 4
+          padding: 4,
+          maxTicksLimit: 7,
+          autoSkip: true,
+          autoSkipPadding: 10
         }
       }
     }

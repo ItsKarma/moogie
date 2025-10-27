@@ -186,6 +186,31 @@ CROSS JOIN generate_series(1, 1000) -- Generate 1000 executions per job over 180
 WHERE j.enabled = true  -- Only generate executions for enabled jobs
 ORDER BY random();
 
+-- Add specific recent executions to ensure we have failures visible in the UI
+-- Add recent failed execution for first job (api-health-check-production) to show at top of dashboard
+INSERT INTO executions (job_id, status, response_time, details, timestamp) VALUES
+(1, 'failed', 850, '{"status_code": 500, "body_size": 250, "error": "Internal Server Error"}'::jsonb, CURRENT_TIMESTAMP - interval '5 minutes'),
+(1, 'success', 120, '{"status_code": 200, "body_size": 450}'::jsonb, CURRENT_TIMESTAMP - interval '10 minutes'),
+(1, 'failed', 920, '{"status_code": 503, "body_size": 180, "error": "Service Unavailable"}'::jsonb, CURRENT_TIMESTAMP - interval '15 minutes'),
+(1, 'success', 95, '{"status_code": 200, "body_size": 430}'::jsonb, CURRENT_TIMESTAMP - interval '20 minutes'),
+(1, 'warning', 780, '{"status_code": 200, "body_size": 450, "warning": "Slow response"}'::jsonb, CURRENT_TIMESTAMP - interval '25 minutes');
+
+-- Add recent executions with some failures for second job to show variety
+INSERT INTO executions (job_id, status, response_time, details, timestamp) VALUES
+(2, 'success', 110, '{"status_code": 200, "body_size": 380}'::jsonb, CURRENT_TIMESTAMP - interval '3 minutes'),
+(2, 'success', 98, '{"status_code": 200, "body_size": 395}'::jsonb, CURRENT_TIMESTAMP - interval '8 minutes'),
+(2, 'failed', 1200, '{"status_code": 502, "body_size": 120, "error": "Bad Gateway"}'::jsonb, CURRENT_TIMESTAMP - interval '13 minutes'),
+(2, 'success', 105, '{"status_code": 200, "body_size": 410}'::jsonb, CURRENT_TIMESTAMP - interval '18 minutes'),
+(2, 'success', 102, '{"status_code": 200, "body_size": 405}'::jsonb, CURRENT_TIMESTAMP - interval '23 minutes');
+
+-- Add recent executions for third job with mixed statuses
+INSERT INTO executions (job_id, status, response_time, details, timestamp) VALUES
+(3, 'success', 145, '{"status_code": 200, "body_size": 520}'::jsonb, CURRENT_TIMESTAMP - interval '4 minutes'),
+(3, 'warning', 650, '{"status_code": 200, "body_size": 510, "warning": "High response time"}'::jsonb, CURRENT_TIMESTAMP - interval '9 minutes'),
+(3, 'success', 132, '{"status_code": 200, "body_size": 530}'::jsonb, CURRENT_TIMESTAMP - interval '14 minutes'),
+(3, 'failed', 980, '{"status_code": 404, "body_size": 95, "error": "Not Found"}'::jsonb, CURRENT_TIMESTAMP - interval '19 minutes'),
+(3, 'success', 128, '{"status_code": 200, "body_size": 525}'::jsonb, CURRENT_TIMESTAMP - interval '24 minutes');
+
 -- Confirm initialization complete
 SELECT 
     (SELECT COUNT(*) FROM jobs) as total_jobs,

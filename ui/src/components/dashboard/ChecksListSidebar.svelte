@@ -84,7 +84,7 @@
           
           <div class="check-pills">
             {#if job.recent_executions && job.recent_executions.length > 0}
-              {#each job.recent_executions.slice(0, 5) as execution}
+              {#each job.recent_executions.slice(0, 5).reverse() as execution}
                 <div class="pill pill-{execution.status}"></div>
               {/each}
             {:else}
