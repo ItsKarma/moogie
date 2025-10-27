@@ -62,14 +62,23 @@ type DashboardSummary struct {
 
 // JobSummary represents a summary of job metrics
 type JobSummary struct {
-	ID              uint       `json:"id"`
-	Name            string     `json:"name"`
-	Type            string     `json:"type"`
-	Enabled         bool       `json:"enabled"`
-	SuccessRate     float64    `json:"success_rate"`
-	LastExecution   *time.Time `json:"last_execution"`
-	AvgResponseTime float64    `json:"avg_response_time"`
-	ExecutionCount  int64      `json:"execution_count"`
+	ID               uint        `json:"id"`
+	Name             string      `json:"name"`
+	Type             string      `json:"type"`
+	Enabled          bool        `json:"enabled"`
+	SuccessRate      float64     `json:"success_rate"`
+	LastExecution    *time.Time  `json:"last_execution"`
+	AvgResponseTime  float64     `json:"avg_response_time"`
+	ExecutionCount   int64       `json:"execution_count"`
+	RecentExecutions []Execution `json:"recent_executions,omitempty"` // Last 10 executions
+	Labels           Labels      `json:"labels,omitempty"`            // Job labels for grouping
+}
+
+// Labels represents job labels extracted from config
+type Labels struct {
+	Service     string `json:"service,omitempty"`
+	Environment string `json:"environment,omitempty"`
+	Team        string `json:"team,omitempty"`
 }
 
 // WebSocketMessage represents a message sent via WebSocket

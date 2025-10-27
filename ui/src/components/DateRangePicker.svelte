@@ -44,6 +44,15 @@
     tempToDate = to.toISOString().split('T')[0];
   }
 
+  function setQuickRangeHours(hours) {
+    const to = new Date();
+    const from = new Date();
+    from.setHours(from.getHours() - hours);
+    
+    tempFromDate = from.toISOString().split('T')[0];
+    tempToDate = to.toISOString().split('T')[0];
+  }
+
   function applyDateRange() {
     // Validate dates
     if (!tempFromDate || !tempToDate) {
@@ -120,9 +129,12 @@
       <div class="quick-ranges">
         <h4>Quick Ranges</h4>
         <div class="quick-buttons">
+          <button type="button" on:click={() => setQuickRangeHours(1)}>Last 1 hour</button>
+          <button type="button" on:click={() => setQuickRange(1)}>Last 1 day</button>
+          <button type="button" on:click={() => setQuickRangeHours(6)}>Last 6 hours</button>
+          <button type="button" on:click={() => setQuickRange(3)}>Last 3 days</button>
+          <button type="button" on:click={() => setQuickRangeHours(12)}>Last 12 hours</button>
           <button type="button" on:click={() => setQuickRange(7)}>Last 7 days</button>
-          <button type="button" on:click={() => setQuickRange(30)}>Last 30 days</button>
-          <button type="button" on:click={() => setQuickRange(90)}>Last 90 days</button>
         </div>
       </div>
       
@@ -237,8 +249,8 @@
   }
 
   .quick-buttons {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-xs);
   }
 
@@ -248,10 +260,11 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-color);
     transition: all 0.2s ease;
-    text-align: left;
+    text-align: center;
+    white-space: nowrap;
   }
 
   .quick-buttons button:hover {

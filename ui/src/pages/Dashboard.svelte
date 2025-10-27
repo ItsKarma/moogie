@@ -1,53 +1,100 @@
 <script>
   import { onMount } from 'svelte';
-  import { getSuccessRateColor } from '../lib/utils.js';
-  import { dateRange, dashboardStore } from '../lib/stores.js';
-  import StatusBadge from '../components/StatusBadge.svelte';
+  import { dateRange, dashboardStore, jobDetailStore } from '../lib/stores.js';
+  import ChecksListSidebar from '../components/dashboard/ChecksListSidebar.svelte';
+  import JobDetailPanel from '../components/dashboard/JobDetailPanel.svelte';
 
   let currentDateRange = {};
   let dashboardData = { data: null, loading: true, error: null };
+  let jobDetailData = { data: null, loading: false, error: null };
+  let selectedJobId = null;
+  let searchQuery = '';
+  let filterStatus = 'all';
 
-  // Subscribe to date range changes
   dateRange.subscribe(range => {
     currentDateRange = range;
-    // Fetch new data when date range changes
     dashboardStore.fetchSummary(range.from, range.to);
   });
 
-  // Subscribe to dashboard store
   dashboardStore.subscribe(value => {
     dashboardData = value;
   });
 
-  // Fetch initial data
+  jobDetailStore.subscribe(value => {
+    jobDetailData = value;
+  });
+
   onMount(() => {
     dashboardStore.fetchSummary(currentDateRange.from, currentDateRange.to);
   });
 
-  // Extract data with defaults
   $: summary = dashboardData.data || {};
-  $: totalJobs = summary.total_jobs || 0;
-  $: activeJobs = summary.active_jobs || 0;
-  $: totalExecutions = summary.total_executions || 0;
-  $: overallSuccessRate = summary.overall_success_rate || 0;
   $: jobSummaries = summary.job_summaries || [];
-  $: recentActivity = summary.recent_activity || [];
 
-  // Map job summaries to display format
-  $: jobs = jobSummaries.map(job => ({
-    id: job.id,
-    name: job.name,
-    type: job.type,
-    successRate: job.success_rate,
-    lastExecution: job.last_execution,
-    avgResponseTime: job.avg_response_time,
-    executionCount: job.execution_count,
-    enabled: job.enabled,
-    // Determine status based on success rate and last execution
-    status: !job.enabled ? 'disabled' : 
-            job.success_rate >= 95 ? 'success' : 
-            job.success_rate >= 80 ? 'warning' : 'failed'
-  }));
+  $: allJobs = jobSummaries.map(job => {
+    const recentExecs = job.recent_executions || [];
+    let status = 'success';
+    let statusPriority = 3;
+    
+    if (!job.enabled) {
+      status = 'disabled';
+      statusPriority = 4;
+    } else if (recentExecs.length > 0) {
+      const mostRecentStatus = recentExecs[0].status;
+      if (mostRecentStatus === 'failed' || mostRecentStatus === 'error') {
+        status = 'failing';
+        statusPriority = 0;
+      } else if (mostRecentStatus === 'warning' || mostRecentStatus === 'timeout') {
+        status = 'warning';
+        statusPriority = 1;
+      } else if (mostRecentStatus === 'success') {
+        status = 'success';
+        statusPriority = 2;
+      }
+    }
+    
+    return { ...job, recent_executions: recentExecs, status, statusPriority };
+  });
+
+  $: filteredJobs = allJobs
+    .filter(job => {
+      const matchesSearch = !searchQuery || 
+        job.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.labels?.service?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = filterStatus === 'all' || 
+        (filterStatus === 'failing' && job.status === 'failing') ||
+        (filterStatus === 'warning' && job.status === 'warning') ||
+        (filterStatus === 'success' && job.status === 'success');
+      
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (a.statusPriority !== b.statusPriority) return a.statusPriority - b.statusPriority;
+      if (a.success_rate !== b.success_rate) return a.success_rate - b.success_rate;
+      return a.name.localeCompare(b.name);
+    });
+
+  $: selectedJob = selectedJobId ? allJobs.find(j => j.id === selectedJobId) : null;
+  
+  // Fetch detailed job data with full execution history when job is selected
+  $: if (selectedJobId && currentDateRange.from && currentDateRange.to) {
+    jobDetailStore.fetchJob(selectedJobId, currentDateRange.from, currentDateRange.to, 1000);
+  }
+  
+  // Merge detailed execution data with summary data
+  $: selectedJobWithExecutions = selectedJob && jobDetailData.data 
+    ? { ...selectedJob, executions: jobDetailData.data.executions || [] }
+    : selectedJob;
+  
+  $: if (!selectedJobId && filteredJobs.length > 0) {
+    selectedJobId = filteredJobs[0].id;
+  }
+
+  function selectJob(jobId) {
+    selectedJobId = jobId;
+  }
 </script>
 
 <div class="dashboard">
@@ -63,204 +110,76 @@
       </button>
     </div>
   {:else}
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Jobs</h3>
-        <div class="stat-number">{totalJobs}</div>
-      </div>
-      <div class="stat-card">
-        <h3>Active Jobs</h3>
-        <div class="stat-number">{activeJobs}</div>
-      </div>
-      <div class="stat-card">
-        <h3>Total Executions</h3>
-        <div class="stat-number">{totalExecutions.toLocaleString()}</div>
-      </div>
-      <div class="stat-card">
-        <h3>Success Rate</h3>
-        <div class="stat-number" style="color: {getSuccessRateColor(overallSuccessRate)}">{overallSuccessRate.toFixed(1)}%</div>
-      </div>
+    <div class="split-view">
+      <ChecksListSidebar 
+        jobs={filteredJobs}
+        {selectedJobId}
+        bind:searchQuery
+        bind:filterStatus
+        onSelectJob={selectJob}
+      />
+      
+      <JobDetailPanel selectedJob={selectedJobWithExecutions} />
     </div>
-
-    <div class="jobs-overview">
-      <h2>Recent Jobs</h2>
-      {#if jobs.length === 0}
-        <p>No jobs found for the selected date range.</p>
-      {:else}
-        <div class="jobs-list">
-          {#each jobs as job}
-            <div class="job-card">
-              <div class="job-header">
-                <h3>{job.name}</h3>
-                <StatusBadge status={job.status} size="small" />
-              </div>
-              <div class="job-details">
-                <p><strong>Type:</strong> {job.type}</p>
-                <p><strong>Success Rate:</strong> <span style="color: {getSuccessRateColor(job.successRate)}">{job.successRate.toFixed(1)}%</span></p>
-                <p><strong>Executions:</strong> {job.executionCount.toLocaleString()}</p>
-                {#if job.lastExecution}
-                  <p><strong>Last Run:</strong> {new Date(job.lastExecution).toLocaleString()}</p>
-                {/if}
-                {#if job.avgResponseTime}
-                  <p><strong>Avg Response:</strong> {Math.round(job.avgResponseTime)}ms</p>
-                {/if}
-              </div>
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
-
-    {#if recentActivity.length > 0}
-      <div class="recent-activity">
-        <h2>Recent Activity</h2>
-        <div class="activity-list">
-          {#each recentActivity.slice(0, 10) as execution}
-            <div class="activity-item">
-              <div class="activity-status">
-                <StatusBadge status={execution.status} size="small" />
-              </div>
-              <div class="activity-details">
-                <p><strong>{execution.job?.name || 'Unknown Job'}</strong></p>
-                <p>{new Date(execution.timestamp).toLocaleString()}</p>
-                {#if execution.response_time}
-                  <p>{execution.response_time}ms</p>
-                {/if}
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
   {/if}
 </div>
 
 <style>
   .dashboard {
-    padding: var(--spacing-xl);
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-xl);
-  }
-
-  .stat-card {
-    background: var(--card-bg);
-    border-radius: var(--radius-md);
     padding: var(--spacing-lg);
-    box-shadow: var(--shadow-lg);
-    text-align: center;
-  }
-
-  .stat-card h3 {
-    margin: 0 0 var(--spacing-sm) 0;
-    color: var(--text-primary);
-    font-size: var(--font-md);
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  .stat-number {
-    font-size: var(--font-xxl);
-    font-weight: bold;
-    color: var(--text-primary);
-  }
-
-  .job-card {
-    background: var(--card-bg);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .job-header {
+    max-width: calc(100vw - 2 * var(--spacing-lg));
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
+    flex-direction: column;
+    margin: 0 auto;
+    box-sizing: border-box;
   }
 
-  .job-header h3 {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: var(--font-lg);
+  .split-view {
+    display: grid;
+    grid-template-columns: 30% 70%;
+    gap: var(--spacing-lg);
+    min-height: 600px;
   }
 
-  .job-details p {
-    margin: 0.25rem 0;
-    color: var(--text-secondary);
-    font-size: var(--font-md);
+  .split-view > :global(*) {
+    min-width: 0;
   }
 
-  .loading {
-    text-align: center;
-    padding: var(--spacing-xl);
-    color: var(--text-secondary);
-  }
-
+  .loading,
   .error {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     padding: var(--spacing-xl);
-    color: var(--status-failed);
+    text-align: center;
+  }
+
+  .loading p,
+  .error p {
+    color: var(--text-secondary);
+    font-size: var(--font-lg);
+    margin: 0 0 var(--spacing-md) 0;
   }
 
   .error button {
+    padding: var(--spacing-sm) var(--spacing-lg);
     background: var(--primary-color);
     color: white;
     border: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    margin-top: var(--spacing-md);
+    font-size: var(--font-md);
+    transition: opacity 0.2s;
   }
 
   .error button:hover {
-    background: var(--primary-color-light);
+    opacity: 0.9;
   }
 
-  .recent-activity {
-    margin-top: var(--spacing-xl);
-  }
-
-  .recent-activity h2 {
-    margin-bottom: var(--spacing-md);
-  }
-
-  .activity-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-
-  .activity-item {
-    display: flex;
-    align-items: center;
-    background: var(--card-bg);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-md);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .activity-status {
-    margin-right: var(--spacing-md);
-  }
-
-  .activity-details p {
-    margin: 0.125rem 0;
-    font-size: var(--font-sm);
-  }
-
-  .activity-details p:first-child {
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .activity-details p:not(:first-child) {
-    color: var(--text-secondary);
+  @media (max-width: 1024px) {
+    .split-view {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

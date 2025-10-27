@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -88,13 +89,15 @@ func (s *DashboardService) GetSummary(from, to time.Time) (*models.DashboardSumm
 // getJobSummaries returns summary metrics for each job
 func (s *DashboardService) getJobSummaries(from, to time.Time) ([]models.JobSummary, error) {
 	var jobs []models.Job
+	
+	// Load all jobs without preloading executions
 	if err := s.db.Find(&jobs).Error; err != nil {
 		return nil, err
 	}
 
 	var summaries []models.JobSummary
 	for _, job := range jobs {
-		// Compute metrics for this job
+		// Compute metrics for this job within date range
 		if err := s.jobService.computeJobMetrics(&job, from, to); err != nil {
 			return nil, err
 		}
@@ -107,21 +110,52 @@ func (s *DashboardService) getJobSummaries(from, to time.Time) ([]models.JobSumm
 			return nil, err
 		}
 
+		// Get last 10 executions for this job (regardless of date range)
+		var recentExecutions []models.Execution
+		if err := s.db.Where("job_id = ?", job.ID).
+			Select("id", "job_id", "status", "response_time", "details", "timestamp").
+			Order("timestamp DESC").
+			Limit(10).
+			Find(&recentExecutions).Error; err != nil {
+			return nil, err
+		}
+
+		// Extract labels from config
+		labels := extractLabels(job.Config)
+
 		summary := models.JobSummary{
-			ID:              job.ID,
-			Name:            job.Name,
-			Type:            job.Type,
-			Enabled:         job.Enabled,
-			SuccessRate:     job.SuccessRate,
-			LastExecution:   job.LastExecution,
-			AvgResponseTime: job.AvgResponseTime,
-			ExecutionCount:  executionCount,
+			ID:               job.ID,
+			Name:             job.Name,
+			Type:             job.Type,
+			Enabled:          job.Enabled,
+			SuccessRate:      job.SuccessRate,
+			LastExecution:    job.LastExecution,
+			AvgResponseTime:  job.AvgResponseTime,
+			ExecutionCount:   executionCount,
+			RecentExecutions: recentExecutions, // Last 10 executions (always, regardless of date range)
+			Labels:           labels,
 		}
 
 		summaries = append(summaries, summary)
 	}
 
 	return summaries, nil
+}
+
+// extractLabels extracts labels from job config JSON
+func extractLabels(configJSON []byte) models.Labels {
+	var config struct {
+		Metadata struct {
+			Labels models.Labels `json:"labels"`
+		} `json:"metadata"`
+	}
+
+	// Try to unmarshal the config
+	if err := json.Unmarshal(configJSON, &config); err != nil {
+		return models.Labels{} // Return empty labels if parsing fails
+	}
+
+	return config.Metadata.Labels
 }
 
 // getStatusBreakdown returns count of executions by status

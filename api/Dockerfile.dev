@@ -1,0 +1,25 @@
+# Development stage with hot reload
+FROM golang:1.23-alpine
+
+# Install build dependencies, air for hot reload, and postgresql-client for migrations
+RUN apk add --no-cache git postgresql-client
+RUN go install github.com/air-verse/air@v1.52.3
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code (will be overridden by volume mount)
+COPY . .
+
+# Expose API port
+EXPOSE 8080
+
+# Default command (overridden by docker-compose)
+CMD ["air", "-c", ".air.toml"]

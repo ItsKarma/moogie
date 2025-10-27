@@ -29,6 +29,7 @@
   <nav class="navbar">
     <div class="nav-container">
       <div class="nav-brand">
+        <img src="/moogie.svg" alt="Moogie" class="nav-logo" />
         <h1>Moogie</h1>
       </div>
       
@@ -52,19 +53,22 @@
               Jobs
             </a>
           </li>
-          <li>
-            <a 
-              href="/settings" 
-              use:link 
-              class:active={currentPath === '/settings'}
-            >
-              Settings
-            </a>
-          </li>
         </ul>
         
         <div class="nav-actions">
           <DateRangePicker />
+          <a 
+            href="/settings" 
+            use:link 
+            class="settings-icon"
+            class:active={currentPath === '/settings'}
+            title="Settings"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </a>
         </div>
       </div>
     </div>
@@ -92,12 +96,22 @@
   }
 
   .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 1rem;
+    padding: 0 var(--spacing-lg);
+    width: 100%;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .nav-logo {
+    width: 32px;
+    height: 32px;
   }
 
   .nav-brand h1 {
@@ -109,7 +123,7 @@
   .nav-right {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: var(--spacing-lg);
   }
 
   .nav-links {
@@ -117,7 +131,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    gap: 1rem;
+    gap: var(--spacing-sm);
   }
 
   .nav-actions {
@@ -149,17 +163,30 @@
     font-weight: 600;
   }
 
-  .main-content {
-    flex: 1;
-    background: #f5f5f5;
-    min-height: calc(100vh - 80px);
+  .settings-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    cursor: pointer;
   }
 
-  /* Dark mode support */
-  @media (prefers-color-scheme: dark) {
-    .main-content {
-      background: #1a1a1a;
-    }
+  .settings-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .settings-icon.active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .main-content {
+    flex: 1;
+    background: var(--background-color);
+    min-height: calc(100vh - 80px);
   }
 
   /* Mobile responsiveness */

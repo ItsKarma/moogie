@@ -1,48 +1,59 @@
 <script>
   import { push } from 'svelte-spa-router';
-  import { dateRange, filterExecutionsByDateRange, calculateSuccessRateForRange } from '../lib/stores.js';
-  import JobSummaryCards from '../components/JobSummaryCards.svelte';
-  import JobConfigSection from '../components/JobConfigSection.svelte';
-  import ExecutionHistoryTable from '../components/ExecutionHistoryTable.svelte';
+  import JobSummaryCards from '../components/job-detail/JobSummaryCards.svelte';
+  import JobConfigSection from '../components/job-detail/JobConfigSection.svelte';
+  import ExecutionHistoryTable from '../components/job-detail/ExecutionHistoryTable.svelte';
   
   export let selectedJob;
   export let executionHistory = [];
 
-  let currentDateRange = {};
-  
-  // Subscribe to date range changes
-  dateRange.subscribe(range => {
-    currentDateRange = range;
-  });
+  // Parse config if it's a string
+  $: parsedJob = selectedJob ? (() => {
+    try {
+      return {
+        ...selectedJob,
+        config: typeof selectedJob.config === 'string' 
+          ? JSON.parse(selectedJob.config) 
+          : selectedJob.config
+      };
+    } catch (e) {
+      console.error('Error parsing job config:', e);
+      return {
+        ...selectedJob,
+        config: {}
+      };
+    }
+  })() : null;
 
-  // Filter execution history and calculate metrics based on date range
-  $: filteredExecutions = filterExecutionsByDateRange(executionHistory || [], currentDateRange);
-  $: filteredSuccessRate = calculateSuccessRateForRange(executionHistory || [], currentDateRange);
-  $: filteredExecutionCount = filteredExecutions.length;
+  // The API already filters executions by date range, so we don't need to filter again
+  // Just use the data as-is from the API
+  $: allExecutions = executionHistory || [];
+  $: executionCount = allExecutions.length;
+  $: successRate = parsedJob?.success_rate || 0;
 
   function goBack() {
     push('/jobs');
   }
 </script>
 
-{#if selectedJob}
+{#if parsedJob}
 <!-- Job Detail View -->
 <div class="job-detail">
   <div class="detail-header">
     <button class="btn-back" on:click={goBack}>← Back to Jobs</button>
-    <h1>{selectedJob.name}</h1>
-    <p class="job-description">{selectedJob.config?.metadata?.description || selectedJob.type + ' check for ' + selectedJob.name}</p>
+    <h1>{parsedJob.name}</h1>
+    <p class="job-description">{parsedJob.config?.metadata?.description || parsedJob.type + ' check for ' + parsedJob.name}</p>
   </div>
 
   <JobSummaryCards 
-    job={selectedJob} 
-    executionCount={filteredExecutionCount} 
-    successRate={filteredSuccessRate} 
+    job={parsedJob} 
+    executionCount={executionCount} 
+    successRate={successRate} 
   />
 
-  <JobConfigSection job={selectedJob} />
+  <JobConfigSection job={parsedJob} />
 
-  <ExecutionHistoryTable executions={filteredExecutions} />
+  <ExecutionHistoryTable executions={allExecutions} />
 </div>
 
 <style>

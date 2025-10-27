@@ -1,31 +1,59 @@
 # Development override for docker-compose
 # Use: docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up
 
-version: "3.8"
-
 services:
   api:
     build:
       context: ./api
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     volumes:
-      # Mount source code for development (if you want to rebuild)
-      - ./api:/app/src:ro
+      # Mount source code for hot reload
+      - ./api:/app
+      - /app/bin # Don't mount the bin directory
     environment:
       - APP_ENV=development
       - GIN_MODE=debug
-    # Override entrypoint for faster development
-    # entrypoint: ["./server"]
+    # Override the production entrypoint
+    entrypoint: []
+    command: >
+      sh -c "
+      echo '🔧 Starting Moogie API in development mode...';
+      echo '⏳ Waiting for PostgreSQL to be ready...';
+      until pg_isready -h postgres -p 5432 -U moogie; do sleep 1; done;
+      echo '✅ PostgreSQL is ready!';
+      echo '🗄️  Running database migrations...';
+      goose -dir /app/migrations postgres 'host=postgres port=5432 user=moogie password=moogie dbname=moogie sslmode=disable' up;
+      echo '✅ Migrations completed!';
+      echo '🚀 Starting Air for hot reload...';
+      air -c .air.toml
+      "
 
   ui:
     build:
       context: ./ui
-      dockerfile: Dockerfile
-      args:
-        - MOOGIE_API_URL=http://localhost:8080
-    # Mount source for development
+      dockerfile: Dockerfile.dev
     volumes:
-      - ./ui/src:/app/src:ro
+      # Mount source for hot reload
+      - ./ui:/app
+      - /app/node_modules # Don't mount node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "3000:3000"
+
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./docs:/app
+      - /app/node_modules
+      - /app/build
+      - /app/.docusaurus
+    command: npm run start -- --host 0.0.0.0
+    ports:
+      - "3001:3000"
 
   # Enable pgAdmin for database management in development
   pgadmin:

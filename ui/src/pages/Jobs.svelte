@@ -4,6 +4,7 @@
   import { formatDate } from '../lib/utils.js';
   import { dateRange, jobsStore, jobDetailStore } from '../lib/stores.js';
   import StatusBadge from '../components/StatusBadge.svelte';
+  import DashboardStats from '../components/dashboard/DashboardStats.svelte';
   import JobDetail from './JobDetail.svelte';
   
   // Route parameters
@@ -78,11 +79,26 @@
   }));
 
   $: filteredJobs = jobs; // API already handles date filtering
+  
+  // Calculate stats for DashboardStats component
+  $: totalJobs = jobs.length;
+  $: activeJobs = jobs.filter(job => job.enabled).length;
+  $: totalExecutions = jobs.reduce((sum, job) => sum + (job.executions?.length || 0), 0);
+  $: overallSuccessRate = jobs.length > 0
+    ? jobs.reduce((sum, job) => sum + job.successRate, 0) / jobs.length
+    : 0;
 </script>
 
 <div class="logs-container">
   {#if !selectedJob}
     <!-- Job List View -->
+    <DashboardStats 
+      {totalJobs}
+      {activeJobs}
+      {totalExecutions}
+      {overallSuccessRate}
+    />
+    
     <div class="logs-header">
       <p>Click on any job to view its configuration and execution history</p>
     </div>
