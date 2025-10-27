@@ -10,6 +10,9 @@
 # Air hot-reload temporary files
 api/tmp/
 
+# Compiled binaries
+api/bin/
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
