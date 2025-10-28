@@ -1,5 +1,6 @@
 import { writable, derived } from "svelte/store";
 import { apiService } from "./api.js";
+import { websocketService, MessageType } from "./websocket.js";
 
 // Default to last 7 days
 function getDefaultDateRange() {
@@ -56,12 +57,15 @@ function updateURL(from, to) {
 // Create the global date range store
 function createDateRangeStore() {
   const initialRange = getDateRangeFromURL();
-  const { subscribe, set, update } = writable(initialRange);
+  const { subscribe, set, update } = writable({
+    ...initialRange,
+    isToDateLive: true, // Track if "to" should auto-update to "now"
+  });
 
   return {
     subscribe,
-    setRange: (from, to) => {
-      const range = { from, to };
+    setRange: (from, to, isToDateLive = true) => {
+      const range = { from, to, isToDateLive };
       set(range);
       updateURL(from, to);
     },
@@ -71,21 +75,31 @@ function createDateRangeStore() {
         updateURL(newRange.from, newRange.to);
         return newRange;
       }),
-    setTo: (to) =>
+    setTo: (to, isToDateLive = false) =>
       update((range) => {
-        const newRange = { ...range, to };
+        const newRange = { ...range, to, isToDateLive };
         updateURL(newRange.from, newRange.to);
         return newRange;
       }),
+    // Update "to" to current time if it's in live mode
+    updateToIfLive: () =>
+      update((range) => {
+        if (range.isToDateLive) {
+          const newTo = new Date().toISOString();
+          updateURL(range.from, newTo);
+          return { ...range, to: newTo };
+        }
+        return range;
+      }),
     reset: () => {
       const defaultRange = getDefaultDateRange();
-      set(defaultRange);
+      set({ ...defaultRange, isToDateLive: true });
       updateURL(defaultRange.from, defaultRange.to);
     },
     // Initialize from URL (called on app start)
     initFromURL: () => {
       const urlRange = getDateRangeFromURL();
-      set(urlRange);
+      set({ ...urlRange, isToDateLive: true });
     },
   };
 }
@@ -149,6 +163,48 @@ function createJobsStore() {
         set({ data: [], loading: false, error: error.message });
       }
     },
+    // Update a specific job in the store
+    updateJob: (updatedJob) => {
+      update((state) => ({
+        ...state,
+        data: state.data.map((job) =>
+          job.id === updatedJob.id ? { ...job, ...updatedJob } : job
+        ),
+      }));
+    },
+    // Add a new execution to a job's recent_executions
+    addExecution: (execution) => {
+      update((state) => ({
+        ...state,
+        data: state.data.map((job) => {
+          if (job.id === execution.job_id) {
+            // Add to beginning of recent_executions array
+            const recentExecutions = [
+              execution,
+              ...(job.recent_executions || []),
+            ].slice(0, 10); // Keep only last 10
+
+            // Recalculate success rate
+            const successCount = recentExecutions.filter(
+              (e) => e.status === "success"
+            ).length;
+            const successRate =
+              recentExecutions.length > 0
+                ? (successCount / recentExecutions.length) * 100
+                : 0;
+
+            return {
+              ...job,
+              recent_executions: recentExecutions,
+              success_rate: successRate,
+              last_execution: execution.timestamp,
+              avg_response_time: execution.response_time, // Simplified - would need full recalc
+            };
+          }
+          return job;
+        }),
+      }));
+    },
     reset: () => set({ data: [], loading: false, error: null }),
   };
 }
@@ -172,6 +228,57 @@ function createDashboardStore() {
       } catch (error) {
         set({ data: null, loading: false, error: error.message });
       }
+    },
+    // Update dashboard with new data
+    updateSummary: (summary) => {
+      update((state) => ({
+        ...state,
+        data: { ...state.data, ...summary },
+      }));
+    },
+    // Add a new execution to a job in the dashboard's job_summaries
+    addExecutionToJob: (execution) => {
+      update((state) => {
+        if (!state.data || !state.data.job_summaries) {
+          return state;
+        }
+
+        const updatedJobSummaries = state.data.job_summaries.map((job) => {
+          if (job.id === execution.job_id) {
+            // Add to beginning of recent_executions array
+            const recentExecutions = [
+              execution,
+              ...(job.recent_executions || []),
+            ].slice(0, 10); // Keep only last 10
+
+            // Recalculate success rate based on recent executions
+            const successCount = recentExecutions.filter(
+              (e) => e.status === "success"
+            ).length;
+            const successRate =
+              recentExecutions.length > 0
+                ? (successCount / recentExecutions.length) * 100
+                : 0;
+
+            return {
+              ...job,
+              recent_executions: recentExecutions,
+              success_rate: successRate,
+              last_execution: execution.timestamp,
+              avg_response_time: execution.response_time,
+            };
+          }
+          return job;
+        });
+
+        return {
+          ...state,
+          data: {
+            ...state.data,
+            job_summaries: updatedJobSummaries,
+          },
+        };
+      });
     },
     reset: () => set({ data: null, loading: false, error: null }),
   };
@@ -197,6 +304,24 @@ function createJobDetailStore() {
         set({ data: null, loading: false, error: error.message });
       }
     },
+    // Add a new execution to the current job's executions
+    addExecution: (execution) => {
+      update((state) => {
+        if (!state.data || state.data.id !== execution.job_id) {
+          return state;
+        }
+
+        const executions = [execution, ...(state.data.executions || [])];
+
+        return {
+          ...state,
+          data: {
+            ...state.data,
+            executions,
+          },
+        };
+      });
+    },
     reset: () => set({ data: null, loading: false, error: null }),
   };
 }
@@ -219,3 +344,69 @@ export const autoDashboardStore = derived(
     dashboardStore.fetchSummary(range.from, range.to);
   }
 );
+
+// Initialize WebSocket and set up message handlers
+export function initializeWebSocket() {
+  // Connect to WebSocket server
+  const wsUrl = `ws://${window.location.hostname}:8080/ws`;
+  websocketService.connect(wsUrl);
+
+  // Helper to get current date range value
+  let currentRangeValue;
+  const unsubscribeDateRange = dateRange.subscribe((value) => {
+    currentRangeValue = value;
+  });
+
+  const getCurrentDateRange = () => currentRangeValue;
+
+  // Handle execution_created messages
+  websocketService.on(MessageType.EXECUTION_CREATED, (execution) => {
+    const currentRange = getCurrentDateRange();
+    const executionTime = new Date(execution.timestamp);
+    const fromTime = new Date(currentRange.from);
+
+    // Check if execution is within the "from" date
+    if (executionTime < fromTime) {
+      return;
+    }
+
+    // If "to" date is locked, also check the upper bound
+    if (!currentRange.isToDateLive) {
+      const toTime = new Date(currentRange.to);
+      if (executionTime > toTime) {
+        return;
+      }
+    }
+    // If in live mode, we don't check upper bound (always accept newer executions)
+
+    // Update dashboard store (for Dashboard page)
+    dashboardStore.addExecutionToJob(execution);
+
+    // Update jobs store (for Jobs page)
+    jobsStore.addExecution(execution);
+
+    // Update job detail store if viewing this job
+    jobDetailStore.addExecution(execution);
+  });
+
+  // Handle job_updated messages
+  websocketService.on(MessageType.JOB_UPDATED, (job) => {
+    // Update the job in the jobs store
+    jobsStore.updateJob(job);
+  });
+
+  // Handle dashboard_updated messages
+  websocketService.on(MessageType.DASHBOARD_UPDATED, (summary) => {
+    // Update dashboard store with new summary
+    dashboardStore.updateSummary(summary);
+  });
+
+  // Return cleanup function
+  return () => {
+    unsubscribeDateRange();
+    websocketService.disconnect();
+  };
+}
+
+// Export WebSocket service and connection status for UI components
+export { websocketService };

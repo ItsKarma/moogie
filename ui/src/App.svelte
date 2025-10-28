@@ -1,11 +1,12 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import Router, { link, location } from 'svelte-spa-router';
   import Dashboard from './pages/Dashboard.svelte';
   import Jobs from './pages/Jobs.svelte';
   import Settings from './pages/Settings.svelte';
   import DateRangePicker from './components/DateRangePicker.svelte';
-  import { dateRange } from './lib/stores.js';
+  import { dateRange, initializeWebSocket, websocketService } from './lib/stores.js';
+  import { ConnectionState } from './lib/websocket.js';
 
   // Define routes
   const routes = {
@@ -19,10 +20,58 @@
   // Use the reactive location store from svelte-spa-router
   $: currentPath = $location;
 
-  // Initialize date range from URL parameters when app starts
+  // WebSocket connection status
+  let connectionStatus = ConnectionState.DISCONNECTED;
+  let cleanupWebSocket = null;
+
+  // Subscribe to WebSocket connection status
+  const unsubscribeStatus = websocketService.connectionStatus.subscribe(status => {
+    connectionStatus = status;
+  });
+
+  // Initialize date range from URL parameters and WebSocket when app starts
   onMount(() => {
     dateRange.initFromURL();
+    
+    // Initialize WebSocket connection
+    cleanupWebSocket = initializeWebSocket();
   });
+
+  // Cleanup on unmount
+  onDestroy(() => {
+    if (cleanupWebSocket) {
+      cleanupWebSocket();
+    }
+    unsubscribeStatus();
+  });
+
+  // Get status indicator color
+  function getStatusColor(status) {
+    switch (status) {
+      case ConnectionState.CONNECTED:
+        return 'var(--status-success)';
+      case ConnectionState.CONNECTING:
+        return 'var(--status-warning)';
+      case ConnectionState.ERROR:
+        return 'var(--status-failed)';
+      default:
+        return 'var(--status-default)';
+    }
+  }
+
+  // Get status text
+  function getStatusText(status) {
+    switch (status) {
+      case ConnectionState.CONNECTED:
+        return 'Live';
+      case ConnectionState.CONNECTING:
+        return 'Connecting...';
+      case ConnectionState.ERROR:
+        return 'Error';
+      default:
+        return 'Offline';
+    }
+  }
 </script>
 
 <div class="app">
@@ -56,6 +105,15 @@
         </ul>
         
         <div class="nav-actions">
+          <!-- WebSocket status indicator -->
+          <div class="ws-status" title="WebSocket connection: {getStatusText(connectionStatus)}">
+            <div 
+              class="ws-indicator"
+              style="background-color: {getStatusColor(connectionStatus)}"
+            ></div>
+            <span class="ws-label">{getStatusText(connectionStatus)}</span>
+          </div>
+
           <DateRangePicker />
           <a 
             href="/settings" 
@@ -183,6 +241,39 @@
     background-color: rgba(255, 255, 255, 0.2);
   }
 
+  /* WebSocket status indicator */
+  .ws-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+  }
+
+  .ws-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .ws-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
   .main-content {
     flex: 1;
     background: var(--background-color);
@@ -219,6 +310,13 @@
     }
 
     .nav-actions {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .ws-status {
+      order: -1;
       width: 100%;
       justify-content: center;
     }

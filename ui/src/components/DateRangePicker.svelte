@@ -46,8 +46,9 @@
     const from = new Date();
     from.setDate(from.getDate() - days);
     
-    tempFromDate = from.toISOString();
-    tempToDate = to.toISOString();
+    // Quick ranges use live "to" date (always "now")
+    dateRange.setRange(from.toISOString(), to.toISOString(), true);
+    showPicker = false;
   }
 
   function setQuickRangeHours(hours) {
@@ -55,8 +56,9 @@
     const from = new Date();
     from.setHours(from.getHours() - hours);
     
-    tempFromDate = from.toISOString();
-    tempToDate = to.toISOString();
+    // Quick ranges use live "to" date (always "now")
+    dateRange.setRange(from.toISOString(), to.toISOString(), true);
+    showPicker = false;
   }
 
   function applyDateRange() {
@@ -79,8 +81,8 @@
       return;
     }
 
-    // Apply the changes with ISO 8601 format
-    dateRange.setRange(tempFromDate, tempToDate);
+    // Custom range uses locked "to" date (user-specified)
+    dateRange.setRange(tempFromDate, tempToDate, false);
     showPicker = false;
   }
 
