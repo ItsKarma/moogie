@@ -1,0 +1,2 @@
+# Helm chart templates should be classified as YAML, not Smarty
+*.tpl linguist-language=YAML
