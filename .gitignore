@@ -12,6 +12,8 @@ api/tmp/
 
 # Compiled binaries
 api/bin/
+api/main
+runner/runner
 
 # Binaries for programs and plugins
 *.exe

@@ -1,0 +1,16 @@
+apiVersion: v2
+name: moogie-runner
+description: Helm chart for deploying Moogie synthetic check runners as Kubernetes CronJobs
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - monitoring
+  - synthetics
+  - cronjob
+  - health-checks
+home: https://github.com/itskarma/moogie
+sources:
+  - https://github.com/itskarma/moogie
+maintainers:
+  - name: ItsKarma

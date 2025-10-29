@@ -1,0 +1,48 @@
+# Development Example
+# Minimal configuration for local/development testing
+
+global:
+  apiUrl: "http://localhost:8080"
+
+  image:
+    repository: moogie-runner
+    tag: latest
+    pullPolicy: Never # Use local images
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+checks:
+  # Single test check
+  - name: httpbin-test
+    enabled: true
+    schedule: "*/1 * * * *" # Every minute for testing
+    type: http
+    config:
+      url: "https://httpbin.org/status/200"
+      method: "GET"
+      expectedStatus: 200
+      timeout: 30
+
+  - name: google-dns-test
+    enabled: true
+    schedule: "*/2 * * * *" # Every 2 minutes
+    type: dns
+    config:
+      hostname: "www.google.com"
+      timeout: 10
+
+cronJob:
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  activeDeadlineSeconds: 60
+  restartPolicy: Never # Don't retry in dev
+  concurrencyPolicy: Allow # Allow concurrent runs
+
+serviceAccount:
+  create: true

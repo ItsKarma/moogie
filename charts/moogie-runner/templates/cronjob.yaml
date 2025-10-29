@@ -1,0 +1,159 @@
+{{- range $check := .Values.checks }}
+{{- if $check.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "moogie-runner.fullname" $ }}-{{ $check.name }}
+  labels:
+    {{- include "moogie-runner.labels" $ | nindent 4 }}
+    moogie.io/check-name: {{ $check.name }}
+    moogie.io/check-type: {{ $check.type }}
+spec:
+  schedule: {{ $check.schedule | quote }}
+  concurrencyPolicy: {{ $.Values.cronJob.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ $.Values.cronJob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $.Values.cronJob.failedJobsHistoryLimit }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "moogie-runner.selectorLabels" $ | nindent 8 }}
+        moogie.io/check-name: {{ $check.name }}
+        moogie.io/check-type: {{ $check.type }}
+        {{- with $.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if $.Values.cronJob.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ $.Values.cronJob.activeDeadlineSeconds }}
+      {{- end }}
+      template:
+        metadata:
+          labels:
+            {{- include "moogie-runner.selectorLabels" $ | nindent 12 }}
+            moogie.io/check-name: {{ $check.name }}
+            moogie.io/check-type: {{ $check.type }}
+            {{- with $.Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with $.Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          {{- with $.Values.global.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "moogie-runner.serviceAccountName" $ }}
+          restartPolicy: {{ $.Values.cronJob.restartPolicy }}
+          containers:
+          - name: runner
+            image: "{{ include "moogie-runner.imageRepository" (dict "check" $check "root" $) }}:{{ include "moogie-runner.imageTag" (dict "check" $check "root" $) }}"
+            imagePullPolicy: {{ include "moogie-runner.imagePullPolicy" (dict "check" $check "root" $) }}
+            env:
+            - name: MOOGIE_API_URL
+              value: {{ $.Values.global.apiUrl | quote }}
+            - name: JOB_NAME
+              value: {{ $check.name | quote }}
+            {{- if eq $check.type "http" }}
+            - name: CHECK_TYPE
+              value: "http"
+            - name: HTTP_URL
+              value: {{ $check.config.url | quote }}
+            {{- if $check.config.method }}
+            - name: HTTP_METHOD
+              value: {{ $check.config.method | quote }}
+            {{- end }}
+            {{- if $check.config.expectedStatus }}
+            - name: HTTP_EXPECTED_STATUS
+              value: {{ $check.config.expectedStatus | quote }}
+            {{- end }}
+            {{- if $check.config.timeout }}
+            - name: HTTP_TIMEOUT
+              value: {{ $check.config.timeout | quote }}
+            {{- end }}
+            {{- if $check.config.headers }}
+            - name: HTTP_HEADERS
+              value: {{ range $key, $val := $check.config.headers }}{{ $key }}:{{ $val }},{{ end }}
+            {{- end }}
+            {{- if $check.config.body }}
+            - name: HTTP_BODY
+              value: {{ $check.config.body | quote }}
+            {{- end }}
+            {{- else if eq $check.type "ssl" }}
+            - name: CHECK_TYPE
+              value: "ssl"
+            - name: SSL_HOST
+              value: {{ $check.config.host | quote }}
+            {{- if $check.config.port }}
+            - name: SSL_PORT
+              value: {{ $check.config.port | quote }}
+            {{- end }}
+            {{- if $check.config.timeout }}
+            - name: SSL_TIMEOUT
+              value: {{ $check.config.timeout | quote }}
+            {{- end }}
+            {{- if $check.config.daysWarning }}
+            - name: SSL_DAYS_WARNING
+              value: {{ $check.config.daysWarning | quote }}
+            {{- end }}
+            {{- else if eq $check.type "dns" }}
+            - name: CHECK_TYPE
+              value: "dns"
+            - name: DNS_HOSTNAME
+              value: {{ $check.config.hostname | quote }}
+            {{- if $check.config.expectedIps }}
+            - name: DNS_EXPECTED_IPS
+              value: {{ $check.config.expectedIps | quote }}
+            {{- end }}
+            {{- if $check.config.timeout }}
+            - name: DNS_TIMEOUT
+              value: {{ $check.config.timeout | quote }}
+            {{- end }}
+            {{- if $check.config.dnsServer }}
+            - name: DNS_SERVER
+              value: {{ $check.config.dnsServer | quote }}
+            {{- end }}
+            {{- else if eq $check.type "tcp" }}
+            - name: CHECK_TYPE
+              value: "tcp"
+            - name: TCP_HOST
+              value: {{ $check.config.host | quote }}
+            - name: TCP_PORT
+              value: {{ $check.config.port | quote }}
+            {{- if $check.config.timeout }}
+            - name: TCP_TIMEOUT
+              value: {{ $check.config.timeout | quote }}
+            {{- end }}
+            {{- else if eq $check.type "custom" }}
+            {{- range $check.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if $check.resources }}
+            resources:
+              {{- toYaml $check.resources | nindent 14 }}
+            {{- else }}
+            resources:
+              {{- toYaml $.Values.global.resources | nindent 14 }}
+            {{- end }}
+          {{- with $.Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+{{- end }}

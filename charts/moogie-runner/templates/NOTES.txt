@@ -1,0 +1,26 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your Moogie synthetic check runners have been deployed as Kubernetes CronJobs.
+
+Deployed Checks:
+{{- range $check := .Values.checks }}
+{{- if $check.enabled }}
+  - {{ $check.name }} ({{ $check.type }}) - Schedule: {{ $check.schedule }}
+{{- end }}
+{{- end }}
+
+To view your CronJobs:
+  kubectl get cronjobs -l app.kubernetes.io/name={{ include "moogie-runner.name" . }}
+
+To view recent job runs:
+  kubectl get jobs -l app.kubernetes.io/name={{ include "moogie-runner.name" . }}
+
+To view logs from a specific check:
+  kubectl logs -l moogie.io/check-name=<check-name> --tail=50
+
+To manually trigger a check:
+  kubectl create job --from=cronjob/{{ include "moogie-runner.fullname" . }}-<check-name> <check-name>-manual-$(date +%s)
+
+Moogie API URL: {{ .Values.global.apiUrl }}
+
+For more information, visit: https://github.com/itskarma/moogie

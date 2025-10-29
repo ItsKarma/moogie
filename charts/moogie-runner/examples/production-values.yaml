@@ -1,0 +1,122 @@
+# Production Example
+# This example shows a production-ready configuration with real-world checks
+
+global:
+  apiUrl: "http://moogie-api.moogie.svc.cluster.local:8080"
+
+  image:
+    repository: registry.example.com/moogie-runner
+    tag: "v1.0.0"
+    pullPolicy: IfNotPresent
+
+  imagePullSecrets:
+    - name: registry-credentials
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 512Mi
+    requests:
+      cpu: 150m
+      memory: 256Mi
+
+checks:
+  # API Health Checks
+  - name: api-production-health
+    enabled: true
+    schedule: "*/2 * * * *" # Every 2 minutes
+    type: http
+    config:
+      url: "https://api.example.com/health"
+      method: "GET"
+      expectedStatus: 200
+      timeout: 10
+      headers:
+        User-Agent: "Moogie-Monitor/1.0"
+
+  - name: api-staging-health
+    enabled: true
+    schedule: "*/5 * * * *" # Every 5 minutes
+    type: http
+    config:
+      url: "https://api-staging.example.com/health"
+      method: "GET"
+      expectedStatus: 200
+      timeout: 15
+
+  # SSL Certificate Monitoring
+  - name: production-ssl-cert
+    enabled: true
+    schedule: "0 */6 * * *" # Every 6 hours
+    type: ssl
+    config:
+      host: "www.example.com"
+      port: 443
+      daysWarning: 30
+      timeout: 15
+
+  - name: api-ssl-cert
+    enabled: true
+    schedule: "0 */6 * * *" # Every 6 hours
+    type: ssl
+    config:
+      host: "api.example.com"
+      port: 443
+      daysWarning: 30
+      timeout: 15
+
+  # DNS Monitoring
+  - name: dns-resolution
+    enabled: true
+    schedule: "*/15 * * * *" # Every 15 minutes
+    type: dns
+    config:
+      hostname: "www.example.com"
+      timeout: 10
+
+  # Database Connectivity
+  - name: postgres-primary
+    enabled: true
+    schedule: "*/5 * * * *" # Every 5 minutes
+    type: tcp
+    config:
+      host: "postgres-primary.database.svc.cluster.local"
+      port: 5432
+      timeout: 5
+
+  - name: redis-cache
+    enabled: true
+    schedule: "*/5 * * * *" # Every 5 minutes
+    type: tcp
+    config:
+      host: "redis.cache.svc.cluster.local"
+      port: 6379
+      timeout: 5
+
+cronJob:
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  activeDeadlineSeconds: 120
+  restartPolicy: OnFailure
+  concurrencyPolicy: Forbid
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/moogie-runner
+
+podAnnotations:
+  prometheus.io/scrape: "false"
+
+podLabels:
+  environment: production
+  team: platform
+
+nodeSelector:
+  workload: monitoring
+
+tolerations:
+  - key: monitoring
+    operator: Equal
+    value: "true"
+    effect: NoSchedule

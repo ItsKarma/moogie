@@ -1,0 +1,132 @@
+# Default values for moogie-runner
+
+# Global settings
+global:
+  # Moogie API URL that runners will report to
+  apiUrl: "http://moogie-api.moogie.svc.cluster.local:8080"
+
+  # Runner image configuration
+  image:
+    repository: moogie-runner
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  # Optional image pull secrets
+  imagePullSecrets: []
+
+  # Resource limits for runner pods
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Define your synthetic checks here
+# Each check will be deployed as a separate CronJob
+checks:
+  # Example HTTP health check
+  - name: api-health-check-production
+    enabled: true
+    schedule: "*/5 * * * *" # Every 5 minutes
+    type: http
+    config:
+      url: "https://api.example.com/health"
+      method: "GET"
+      expectedStatus: 200
+      timeout: 30
+      headers:
+        User-Agent: "Moogie/1.0"
+        Accept: "application/json"
+    # Optional: override global settings for this check
+    # image:
+    #   repository: custom-runner
+    #   tag: v1.0.0
+    # resources:
+    #   limits:
+    #     cpu: 300m
+
+  # Example SSL certificate check
+  - name: website-ssl-certificate
+    enabled: true
+    schedule: "0 8 * * *" # Daily at 8 AM
+    type: ssl
+    config:
+      host: "www.example.com"
+      port: 443
+      daysWarning: 30
+      timeout: 15
+
+  # Example DNS resolution check
+  - name: dns-resolution-check
+    enabled: true
+    schedule: "*/15 * * * *" # Every 15 minutes
+    type: dns
+    config:
+      hostname: "www.example.com"
+      expectedIps: "93.184.216.34"
+      timeout: 10
+
+  # Example TCP connectivity check
+  - name: database-tcp-check
+    enabled: true
+    schedule: "*/10 * * * *" # Every 10 minutes
+    type: tcp
+    config:
+      host: "db.example.com"
+      port: 5432
+      timeout: 10
+
+  # Example custom container check (e.g., Puppeteer)
+  - name: custom-puppeteer-check
+    enabled: false # Disabled by default
+    schedule: "*/30 * * * *" # Every 30 minutes
+    type: custom
+    image:
+      repository: your-registry/puppeteer-check
+      tag: latest
+    env:
+      - name: TARGET_URL
+        value: "https://app.example.com"
+      - name: TIMEOUT
+        value: "60000"
+
+# CronJob settings
+cronJob:
+  # How many successful/failed jobs to keep
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+
+  # Deadline for job execution (in seconds)
+  # If job doesn't finish within this time, it's marked as failed
+  activeDeadlineSeconds: 300
+
+  # Restart policy for failed jobs
+  restartPolicy: OnFailure
+
+  # Concurrency policy: Allow, Forbid, or Replace
+  concurrencyPolicy: Forbid
+
+# ServiceAccount settings
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Pod annotations and labels
+podAnnotations: {}
+podLabels: {}
+
+# Node selector for pod scheduling
+nodeSelector: {}
+
+# Tolerations for pod scheduling
+tolerations: []
+
+# Affinity rules for pod scheduling
+affinity: {}
