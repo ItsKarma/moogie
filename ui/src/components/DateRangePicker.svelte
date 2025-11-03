@@ -313,7 +313,6 @@
     color: var(--text-secondary);
   }
 
-  input[type="date"],
   input[type="datetime-local"] {
     padding: var(--spacing-sm);
     border: 1px solid var(--border-color);
@@ -324,7 +323,6 @@
     transition: border-color 0.2s ease;
   }
 
-  input[type="date"]:focus,
   input[type="datetime-local"]:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -333,11 +331,6 @@
   /* Fix for datetime-local in dark mode */
   input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     filter: invert(var(--invert-icon, 0));
-  }
-
-  :root.theme-dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-  :root[data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
   }
 
   .picker-actions {
@@ -390,7 +383,7 @@
 
   /* Dark mode adjustments */
   @media (prefers-color-scheme: dark) {
-    input[type="date"]::-webkit-calendar-picker-indicator {
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
       filter: invert(1);
     }
   }
