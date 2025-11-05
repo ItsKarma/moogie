@@ -127,38 +127,42 @@ docker build -t moogie-runner:latest .
 ```bash
 # HTTP check example
 docker run --rm \
+  --network moogie_moogie-network \
   -e CHECK_TYPE=http \
   -e HTTP_URL=https://httpbin.org/status/200 \
   -e HTTP_METHOD=GET \
   -e HTTP_EXPECTED_STATUS=200 \
-  -e MOOGIE_API_URL=http://localhost:8080 \
+  -e MOOGIE_API_URL=http://moogie-api:8080 \
   -e JOB_NAME=api-health-check-production \
   moogie-runner:latest
 
 # SSL check example
 docker run --rm \
+  --network moogie_moogie-network \
   -e CHECK_TYPE=ssl \
   -e SSL_HOST=www.google.com \
   -e SSL_PORT=443 \
   -e SSL_DAYS_WARNING=30 \
-  -e MOOGIE_API_URL=http://localhost:8080 \
+  -e MOOGIE_API_URL=http://moogie-api:8080 \
   -e JOB_NAME=ssl-certificate-check \
   moogie-runner:latest
 
 # DNS check example
 docker run --rm \
+  --network moogie_moogie-network \
   -e CHECK_TYPE=dns \
   -e DNS_HOSTNAME=www.google.com \
-  -e MOOGIE_API_URL=http://localhost:8080 \
+  -e MOOGIE_API_URL=http://moogie-api:8080 \
   -e JOB_NAME=dns-resolution-check \
   moogie-runner:latest
 
 # TCP check example
 docker run --rm \
+  --network moogie_moogie-network \
   -e CHECK_TYPE=tcp \
   -e TCP_HOST=google.com \
   -e TCP_PORT=443 \
-  -e MOOGIE_API_URL=http://localhost:8080 \
+  -e MOOGIE_API_URL=http://moogie-api:8080 \
   -e JOB_NAME=tcp-connectivity-check \
   moogie-runner:latest
 ```
@@ -355,7 +359,7 @@ go build -o runner .
 ```bash
 export CHECK_TYPE=http
 export HTTP_URL=https://httpbin.org/status/200
-export MOOGIE_API_URL=http://localhost:8080
+export MOOGIE_API_URL=http://moogie-api:8080
 export JOB_NAME=api-health-check-production
 ./runner
 ```

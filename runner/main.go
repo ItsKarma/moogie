@@ -13,13 +13,13 @@ func main() {
 	// Read configuration from environment variables
 	checkType := os.Getenv("CHECK_TYPE")
 	apiURL := os.Getenv("MOOGIE_API_URL")
+	if apiURL == "" {
+		apiURL = "http://moogie-api:8080"
+	}
 	jobName := os.Getenv("JOB_NAME")
 
 	if checkType == "" {
 		log.Fatal("CHECK_TYPE environment variable is required")
-	}
-	if apiURL == "" {
-		log.Fatal("MOOGIE_API_URL environment variable is required")
 	}
 	if jobName == "" {
 		log.Fatal("JOB_NAME environment variable is required")

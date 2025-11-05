@@ -1,5 +1,5 @@
 services:
-  postgres:
+  moogie-postgres:
     image: postgres:15-alpine
     container_name: moogie-postgres
     environment:
@@ -20,7 +20,7 @@ services:
       retries: 5
       start_period: 10s
 
-  api:
+  moogie-api:
     build:
       context: ./api
       dockerfile: Dockerfile
@@ -30,15 +30,15 @@ services:
     environment:
       - APP_ENV=development
       - APP_PORT=8080
-      - DB_HOST=postgres
+      - DB_HOST=moogie-postgres
       - DB_PORT=5432
       - DB_USER=moogie
       - DB_PASSWORD=moogie
       - DB_NAME=moogie
       - DB_SSLMODE=disable
-      - ALLOWED_ORIGINS=http://localhost:3000,http://ui:3000
+      - ALLOWED_ORIGINS=http://localhost:3000,http://moogie-ui:3000
     depends_on:
-      postgres:
+      moogie-postgres:
         condition: service_healthy
     networks:
       - moogie-network
@@ -54,7 +54,7 @@ services:
       retries: 3
       start_period: 30s
 
-  ui:
+  moogie-ui:
     build:
       context: ./ui
       dockerfile: Dockerfile
@@ -64,7 +64,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      api:
+      moogie-api:
         condition: service_healthy
     networks:
       - moogie-network
@@ -80,7 +80,7 @@ services:
       retries: 3
       start_period: 10s
 
-  docs:
+  moogie-docs:
     build:
       context: ./docs
       dockerfile: Dockerfile
@@ -102,19 +102,19 @@ services:
       start_period: 10s
 
   # Database seeder - run once to populate with sample data
-  seeder:
+  moogie-seeder:
     build:
       context: ./seed
       dockerfile: Dockerfile
     container_name: moogie-seeder
     environment:
-      - DB_HOST=postgres
+      - DB_HOST=moogie-postgres
       - DB_PORT=5432
       - DB_USER=moogie
       - DB_PASSWORD=moogie
       - DB_NAME=moogie
     depends_on:
-      postgres:
+      moogie-postgres:
         condition: service_healthy
     networks:
       - moogie-network
@@ -123,7 +123,7 @@ services:
       - seed
 
   # Optional: Database admin interface
-  pgadmin:
+  moogie-pgadmin:
     image: dpage/pgadmin4:latest
     container_name: moogie-pgadmin
     environment:
@@ -135,7 +135,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - postgres
+      - moogie-postgres
     networks:
       - moogie-network
     profiles:
