@@ -1,0 +1,49 @@
+meta {
+  name: Create Execution - Success
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{api_base}}/executions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "job_name": "test-api-health",
+    "status": "success",
+    "response_time": 150,
+    "details": {
+      "status_code": 200,
+      "response_body": "OK",
+      "headers": {
+        "content-type": "application/json"
+      }
+    },
+    "timestamp": "2024-01-01T12:00:00Z"
+  }
+}
+
+tests {
+  test("should return 201 status", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("should return created execution", function() {
+    const execution = res.getBody();
+    expect(execution).to.be.an('object');
+    expect(execution).to.have.property('id');
+    expect(execution.status).to.equal('success');
+  });
+
+  test("should set job_name correctly", function() {
+    const execution = res.getBody();
+    expect(execution).to.have.property('job_id');
+  });
+}

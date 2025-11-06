@@ -1,0 +1,25 @@
+name: Moogie API Tests
+type: collection
+version: 1
+
+vars:
+  base_url: http://localhost:8080
+  api_base: http://localhost:8080/api/v1
+
+environments:
+  - name: local
+    variables:
+      base_url: http://localhost:8080
+      api_base: http://localhost:8080/api/v1
+  - name: development
+    variables:
+      base_url: http://localhost:3000
+      api_base: http://localhost:3000/api/v1
+  - name: staging
+    variables:
+      base_url: https://staging-api.moogie.com
+      api_base: https://staging-api.moogie.com/api/v1
+  - name: production
+    variables:
+      base_url: https://api.moogie.com
+      api_base: https://api.moogie.com/api/v1

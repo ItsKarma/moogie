@@ -1,0 +1,34 @@
+meta {
+  name: Create Execution - Invalid Data
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{api_base}}/executions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "job_name": "",
+    "status": "invalid_status",
+    "response_time": -100
+  }
+}
+
+tests {
+  test("should return 400 status for validation errors", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("should return error message", function() {
+    const body = res.getBody();
+    expect(body).to.have.property('error');
+  });
+}

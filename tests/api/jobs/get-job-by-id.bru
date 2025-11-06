@@ -1,0 +1,38 @@
+meta {
+  name: Get Job by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{api_base}}/jobs/1
+  body: none
+  auth: none
+}
+
+vars {
+  job_id: 1
+}
+
+tests {
+  test("should return 200 or 404 status", function() {
+    const status = res.getStatus();
+    expect([200, 404]).to.include(status);
+  });
+
+  test("if job exists, should return job object", function() {
+    if (res.getStatus() === 200) {
+      const job = res.getBody();
+      expect(job).to.be.an('object');
+      expect(job).to.have.property('id');
+      expect(job.id).to.equal(1);
+    }
+  });
+
+  test("if job not found, should return 404", function() {
+    if (res.getStatus() === 404) {
+      const body = res.getBody();
+      expect(body).to.have.property('error');
+    }
+  });
+}

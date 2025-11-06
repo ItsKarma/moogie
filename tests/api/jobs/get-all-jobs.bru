@@ -1,0 +1,36 @@
+meta {
+  name: Get All Jobs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{api_base}}/jobs
+  body: none
+  auth: none
+}
+
+tests {
+  test("should return 200 status", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should return array of jobs", function() {
+    const body = res.getBody();
+    expect(body).to.be.an('array');
+  });
+
+  test("response time should be reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+
+  test("each job should have required fields", function() {
+    const jobs = res.getBody();
+    if (jobs.length > 0) {
+      const job = jobs[0];
+      expect(job).to.have.property('id');
+      expect(job).to.have.property('name');
+      expect(job).to.have.property('status');
+    }
+  });
+}

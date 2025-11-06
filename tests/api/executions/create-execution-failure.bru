@@ -1,0 +1,47 @@
+meta {
+  name: Create Execution - Failure
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{api_base}}/executions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "job_name": "test-ssl-check",
+    "status": "failure",
+    "response_time": 5000,
+    "details": {
+      "error": "SSL certificate expired",
+      "certificate_expiry": "2023-12-01T00:00:00Z",
+      "days_until_expiry": -30
+    },
+    "timestamp": "2024-01-01T12:00:00Z"
+  }
+}
+
+tests {
+  test("should return 201 status", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("should return created execution", function() {
+    const execution = res.getBody();
+    expect(execution).to.be.an('object');
+    expect(execution).to.have.property('id');
+    expect(execution.status).to.equal('failure');
+  });
+
+  test("should handle failure details", function() {
+    const execution = res.getBody();
+    expect(execution.details).to.be.an('object');
+  });
+}

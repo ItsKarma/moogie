@@ -1,0 +1,31 @@
+meta {
+  name: Get All Jobs with Date Range
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{api_base}}/jobs?from=2024-01-01T00:00:00Z&to=2024-12-31T23:59:59Z
+  body: none
+  auth: none
+}
+
+params:query {
+  from: 2024-01-01T00:00:00Z
+  to: 2024-12-31T23:59:59Z
+}
+
+tests {
+  test("should return 200 status", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should return filtered jobs array", function() {
+    const body = res.getBody();
+    expect(body).to.be.an('array');
+  });
+
+  test("should handle date range parameters", function() {
+    expect(res.getStatus()).to.not.equal(400);
+  });
+}

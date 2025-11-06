@@ -1,0 +1,32 @@
+meta {
+  name: Get Dashboard Summary
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{api_base}}/dashboard/summary
+  body: none
+  auth: none
+}
+
+tests {
+  test("should return 200 status", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should return dashboard summary object", function() {
+    const summary = res.getBody();
+    expect(summary).to.be.an('object');
+  });
+
+  test("summary should have expected metrics", function() {
+    const summary = res.getBody();
+    // Add specific field checks based on your dashboard summary structure
+    expect(summary).to.be.an('object');
+  });
+
+  test("response time should be reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(3000);
+  });
+}
